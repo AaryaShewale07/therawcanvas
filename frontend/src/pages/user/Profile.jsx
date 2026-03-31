@@ -16,6 +16,8 @@ import { useAuth } from '../../context/AuthContext'
 import { pageTransition } from '../../utils/animations'
 import toast from 'react-hot-toast'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
 const Profile = () => {
     const { user, setUser } = useAuth()
     const [isEditing, setIsEditing] = useState(false)
@@ -79,7 +81,7 @@ const Profile = () => {
         try {
             const token = localStorage.getItem('token')
 
-            const res = await fetch('http://localhost:5000/api/auth/profile', {
+            const res = await fetch(`${API_URL}/auth/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -97,8 +99,6 @@ const Profile = () => {
             if (!res.ok) throw new Error(data.message || 'Update failed')
 
             setUser(data.data.user)
-            localStorage.setItem('user', JSON.stringify(data.data.user))
-
             toast.success('Profile updated successfully!')
             setIsEditing(false)
 
@@ -125,7 +125,6 @@ const Profile = () => {
         setIsEditing(false)
     }
 
-    // Image Upload Functions
     const openImageModal = () => {
         setIsImageModalOpen(true)
         setImagePreview(null)
@@ -141,13 +140,11 @@ const Profile = () => {
     const handleFileSelect = (e) => {
         const file = e.target.files[0]
         if (file) {
-            // Validate file type
             if (!file.type.startsWith('image/')) {
                 toast.error('Please select an image file')
                 return
             }
 
-            // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
                 toast.error('Image size should be less than 5MB')
                 return
@@ -155,7 +152,6 @@ const Profile = () => {
 
             setSelectedFile(file)
 
-            // Create preview
             const reader = new FileReader()
             reader.onloadend = () => {
                 setImagePreview(reader.result)
@@ -195,6 +191,7 @@ const Profile = () => {
         }
     }
 
+    // ✅ Upload to Cloudinary via Backend
     const handleImageUpload = async () => {
         if (!selectedFile) {
             toast.error('Please select an image')
@@ -205,70 +202,85 @@ const Profile = () => {
 
         try {
             const token = localStorage.getItem('token')
-            const formData = new FormData()
-            formData.append('avatar', selectedFile)
 
-            const res = await fetch('http://localhost:5000/api/auth/avatar', {
+            if (!token) {
+                throw new Error('Please login again')
+            }
+
+            const formDataToSend = new FormData()
+            formDataToSend.append('avatar', selectedFile)
+
+            const res = await fetch(`${API_URL}/auth/avatar`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
-                body: formData,
+                body: formDataToSend,
             })
 
             const data = await res.json()
 
-            if (!res.ok) throw new Error(data.message || 'Upload failed')
+            if (!res.ok) {
+                throw new Error(data.message || 'Upload failed')
+            }
 
-            // Update user with new avatar
-            const updatedUser = { ...user, avatar: data.data.avatar }
-            setUser(updatedUser)
-            localStorage.setItem('user', JSON.stringify(updatedUser))
-
+            setUser(data.data.user)
             toast.success('Profile image updated successfully!')
             closeImageModal()
 
         } catch (error) {
-            toast.error(error.message)
+            console.error('Upload error:', error)
+            toast.error(error.message || 'Failed to upload image')
         } finally {
             setIsUploadingImage(false)
         }
     }
 
+    // ✅ Remove from Cloudinary via Backend
     const handleRemoveAvatar = async () => {
-        if (!window.confirm('Are you sure you want to remove your profile picture?')) {
-            return
-        }
+        const confirmed = window.confirm('Are you sure you want to remove your profile picture?')
+        if (!confirmed) return
 
         setIsUploadingImage(true)
 
         try {
             const token = localStorage.getItem('token')
 
-            const res = await fetch('http://localhost:5000/api/auth/avatar', {
+            if (!token) {
+                throw new Error('Please login again')
+            }
+
+            const res = await fetch(`${API_URL}/auth/avatar`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
                 },
             })
 
             const data = await res.json()
 
-            if (!res.ok) throw new Error(data.message || 'Remove failed')
+            if (!res.ok) {
+                throw new Error(data.message || 'Remove failed')
+            }
 
-            // Update user with default avatar
-            const updatedUser = { ...user, avatar: data.data.avatar }
-            setUser(updatedUser)
-            localStorage.setItem('user', JSON.stringify(updatedUser))
-
+            setUser(data.data.user)
             toast.success('Profile image removed!')
             closeImageModal()
 
         } catch (error) {
-            toast.error(error.message)
+            console.error('Remove error:', error)
+            toast.error(error.message || 'Failed to remove image')
         } finally {
             setIsUploadingImage(false)
         }
+    }
+
+    const getAvatarUrl = () => {
+        if (!user?.avatar) {
+            return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=D4A574&color=fff&size=200`
+        }
+        return user.avatar
     }
 
     return (
@@ -280,7 +292,6 @@ const Profile = () => {
             className="pt-24 pb-16"
         >
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -294,23 +305,23 @@ const Profile = () => {
                     </p>
                 </motion.div>
 
-                {/* Profile Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                     className="bg-white rounded-3xl shadow-elegant overflow-hidden"
                 >
-                    {/* Cover & Avatar */}
                     <div className="relative h-40 bg-gradient-to-r from-primary-500 via-gold-500 to-chocolate-600">
                         <div className="absolute -bottom-16 left-8">
                             <div className="relative group">
                                 <img
-                                    src={user?.avatar}
+                                    src={getAvatarUrl()}
                                     alt={user?.name}
                                     className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
+                                    onError={(e) => {
+                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=D4A574&color=fff&size=200`
+                                    }}
                                 />
-                                {/* Camera Button - Opens Modal */}
                                 <motion.button
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
@@ -320,8 +331,7 @@ const Profile = () => {
                                     <HiOutlineCamera className="w-5 h-5" />
                                 </motion.button>
 
-                                {/* Hover Overlay */}
-                                <div 
+                                <div
                                     onClick={openImageModal}
                                     className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
                                 >
@@ -330,7 +340,6 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        {/* Edit Button */}
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -342,7 +351,6 @@ const Profile = () => {
                         </motion.button>
                     </div>
 
-                    {/* User Info */}
                     <div className="pt-20 px-8 pb-8">
                         <div className="mb-8">
                             <h2 className="text-2xl font-heading font-bold text-chocolate-900">
@@ -357,10 +365,8 @@ const Profile = () => {
                             </span>
                         </div>
 
-                        {/* Profile Form */}
                         <form onSubmit={handleSubmit}>
                             <div className="grid md:grid-cols-2 gap-6">
-                                {/* Name */}
                                 <div>
                                     <label className="block text-sm font-medium text-chocolate-700 mb-2">
                                         <HiOutlineUser className="inline w-4 h-4 mr-2" />
@@ -376,7 +382,6 @@ const Profile = () => {
                                     />
                                 </div>
 
-                                {/* Email */}
                                 <div>
                                     <label className="block text-sm font-medium text-chocolate-700 mb-2">
                                         <HiOutlineMail className="inline w-4 h-4 mr-2" />
@@ -392,7 +397,6 @@ const Profile = () => {
                                     <p className="text-xs text-chocolate-400 mt-1">Email cannot be changed</p>
                                 </div>
 
-                                {/* Phone */}
                                 <div>
                                     <label className="block text-sm font-medium text-chocolate-700 mb-2">
                                         <HiOutlinePhone className="inline w-4 h-4 mr-2" />
@@ -409,7 +413,6 @@ const Profile = () => {
                                     />
                                 </div>
 
-                                {/* Country */}
                                 <div>
                                     <label className="block text-sm font-medium text-chocolate-700 mb-2">
                                         <HiOutlineLocationMarker className="inline w-4 h-4 mr-2" />
@@ -426,7 +429,6 @@ const Profile = () => {
                                     />
                                 </div>
 
-                                {/* Street Address */}
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-chocolate-700 mb-2">
                                         Street Address
@@ -442,7 +444,6 @@ const Profile = () => {
                                     />
                                 </div>
 
-                                {/* City */}
                                 <div>
                                     <label className="block text-sm font-medium text-chocolate-700 mb-2">
                                         City
@@ -458,7 +459,6 @@ const Profile = () => {
                                     />
                                 </div>
 
-                                {/* State */}
                                 <div>
                                     <label className="block text-sm font-medium text-chocolate-700 mb-2">
                                         State / Province
@@ -474,7 +474,6 @@ const Profile = () => {
                                     />
                                 </div>
 
-                                {/* Zip Code */}
                                 <div>
                                     <label className="block text-sm font-medium text-chocolate-700 mb-2">
                                         ZIP / Postal Code
@@ -491,7 +490,6 @@ const Profile = () => {
                                 </div>
                             </div>
 
-                            {/* Action Buttons */}
                             {isEditing && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
@@ -533,7 +531,6 @@ const Profile = () => {
                     </div>
                 </motion.div>
 
-                {/* Account Stats */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -576,7 +573,6 @@ const Profile = () => {
                             onClick={(e) => e.stopPropagation()}
                             className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
                         >
-                            {/* Modal Header */}
                             <div className="px-6 py-4 border-b border-cream-100 flex items-center justify-between">
                                 <h2 className="text-xl font-heading font-bold text-chocolate-900">
                                     Update Profile Picture
@@ -591,15 +587,16 @@ const Profile = () => {
                                 </motion.button>
                             </div>
 
-                            {/* Modal Body */}
                             <div className="p-6">
-                                {/* Current Avatar */}
                                 <div className="flex justify-center mb-6">
                                     <div className="relative">
                                         <img
-                                            src={imagePreview || user?.avatar}
+                                            src={imagePreview || getAvatarUrl()}
                                             alt="Profile"
                                             className="w-32 h-32 rounded-full object-cover border-4 border-cream-200"
+                                            onError={(e) => {
+                                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=D4A574&color=fff&size=200`
+                                            }}
                                         />
                                         {imagePreview && (
                                             <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
@@ -609,7 +606,6 @@ const Profile = () => {
                                     </div>
                                 </div>
 
-                                {/* Upload Area */}
                                 <div
                                     onDragOver={handleDragOver}
                                     onDrop={handleDrop}
@@ -623,11 +619,11 @@ const Profile = () => {
                                         onChange={handleFileSelect}
                                         className="hidden"
                                     />
-                                    
+
                                     <div className="w-16 h-16 bg-cream-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <HiOutlinePhotograph className="w-8 h-8 text-chocolate-400" />
                                     </div>
-                                    
+
                                     <p className="text-chocolate-700 font-medium mb-1">
                                         Click to upload or drag and drop
                                     </p>
@@ -647,9 +643,7 @@ const Profile = () => {
                                     )}
                                 </div>
 
-                                {/* Action Buttons */}
                                 <div className="flex flex-col gap-3 mt-6">
-                                    {/* Upload Button */}
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
@@ -660,7 +654,7 @@ const Profile = () => {
                                         {isUploadingImage ? (
                                             <>
                                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                Uploading...
+                                                Uploading to Cloud...
                                             </>
                                         ) : (
                                             <>
@@ -670,7 +664,6 @@ const Profile = () => {
                                         )}
                                     </motion.button>
 
-                                    {/* Remove Current Picture */}
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
@@ -682,7 +675,6 @@ const Profile = () => {
                                         Remove Current Picture
                                     </motion.button>
 
-                                    {/* Cancel */}
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
