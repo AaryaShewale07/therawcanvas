@@ -18,8 +18,15 @@ import Workshops from './pages/Workshops'
 import Admin from './pages/Admin'
 import NotFound from './pages/NotFound'
 
+// User Account Pages
+import Profile from './pages/user/Profile'
+import Wishlist from './pages/user/Wishlist'
+import Orders from './pages/user/Orders'
+import Settings from './pages/user/Settings'
+
 // Components
 import ScrollToTop from './components/common/ScrollToTop'
+import ProtectedRoute from './components/common/ProtectedRoute'
 
 function App() {
   const location = useLocation()
@@ -33,7 +40,16 @@ function App() {
     })
   }, [])
 
-  // Check if current route is admin
+  // ✅ Initialize dark mode from localStorage on app load
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode')
+    if (savedDarkMode === 'true') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [])
+
   const isAdminRoute = location.pathname.startsWith('/admin')
 
   return (
@@ -43,7 +59,7 @@ function App() {
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#3d2218',
+            background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#3d2218',
             color: '#fefdfb',
             borderRadius: '12px',
             padding: '16px',
@@ -52,7 +68,7 @@ function App() {
           success: {
             iconTheme: {
               primary: '#d4be3e',
-              secondary: '#3d2218',
+              secondary: document.documentElement.classList.contains('dark') ? '#1e293b' : '#3d2218',
             },
           },
         }}
@@ -80,6 +96,10 @@ function App() {
               <Route path="chocolates" element={<Chocolates />} />
               <Route path="gifting" element={<Gifting />} />
               <Route path="workshops" element={<Workshops />} />
+              <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+              <Route path="orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+              <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

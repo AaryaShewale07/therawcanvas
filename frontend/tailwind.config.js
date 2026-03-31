@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  
   theme: {
     extend: {
       colors: {
@@ -54,6 +55,18 @@ export default {
           700: '#c09570',
           800: '#a67b58',
           900: '#8a6548',
+        },
+        dark: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          900: '#0f172a',
         }
       },
       fontFamily: {
@@ -119,15 +132,13 @@ export default {
           '100%': { backgroundPosition: '200% 0' },
         },
       },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'hero-pattern': "url('/patterns/hero-pattern.svg')",
-      },
       boxShadow: {
         'elegant': '0 4px 20px -2px rgba(0, 0, 0, 0.1)',
         'elegant-lg': '0 10px 40px -10px rgba(0, 0, 0, 0.15)',
         'gold': '0 4px 20px -2px rgba(212, 190, 62, 0.3)',
         'chocolate': '0 4px 20px -2px rgba(61, 34, 24, 0.3)',
+        'dark-elegant': '0 4px 20px -2px rgba(0, 0, 0, 0.4)',
+        'dark-elegant-lg': '0 10px 40px -10px rgba(0, 0, 0, 0.5)',
       },
     },
   },

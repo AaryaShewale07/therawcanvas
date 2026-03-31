@@ -46,7 +46,7 @@ const Navbar = () => {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           isScrolled 
-            ? 'bg-white/95 backdrop-blur-md shadow-elegant py-3' 
+            ? 'bg-white/95 dark:bg-dark-900/95 backdrop-blur-md shadow-elegant dark:shadow-dark-elegant py-3' 
             : 'bg-transparent py-5'
         }`}
       >
@@ -63,10 +63,10 @@ const Navbar = () => {
                   <span className="text-white font-script text-xl">A&C</span>
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="font-heading font-bold text-xl text-chocolate-900">
-                    TheRawCanvasStudio
+                  <h1 className="font-heading font-bold text-xl text-chocolate-900 dark:text-dark-50">
+                    Art & Chocolates
                   </h1>
-                  <p className="text-xs text-chocolate-500 font-script">
+                  <p className="text-xs text-chocolate-500 dark:text-dark-400 font-script">
                     Handcrafted Elegance
                   </p>
                 </div>
@@ -83,8 +83,8 @@ const Navbar = () => {
                     relative font-medium text-sm uppercase tracking-wider
                     transition-colors duration-300 link-hover
                     ${isActive 
-                      ? 'text-primary-600' 
-                      : 'text-chocolate-700 hover:text-primary-600'
+                      ? 'text-primary-600 dark:text-primary-400' 
+                      : 'text-chocolate-700 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400'
                     }
                   `}
                 >
@@ -108,13 +108,12 @@ const Navbar = () => {
               ))}
             </div>
 
-            {/* Right Side - Actions */}
+            {/* Right Side */}
             <div className="flex items-center gap-4">
-              {/* Wishlist & Cart */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="hidden sm:flex relative p-2 text-chocolate-700 hover:text-primary-600 transition-colors"
+                className="hidden sm:flex relative p-2 text-chocolate-700 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
                 <HiOutlineHeart className="w-6 h-6" />
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -125,7 +124,7 @@ const Navbar = () => {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="hidden sm:flex relative p-2 text-chocolate-700 hover:text-primary-600 transition-colors"
+                className="hidden sm:flex relative p-2 text-chocolate-700 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
                 <HiOutlineShoppingBag className="w-6 h-6" />
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-gold-500 text-chocolate-900 text-xs rounded-full flex items-center justify-center">
@@ -133,10 +132,8 @@ const Navbar = () => {
                 </span>
               </motion.button>
 
-              {/* Divider */}
-              <div className="hidden sm:block w-px h-6 bg-chocolate-200" />
+              <div className="hidden sm:block w-px h-6 bg-chocolate-200 dark:bg-dark-600" />
 
-              {/* Auth Section */}
               {user ? (
                 <UserDropdown />
               ) : (
@@ -145,7 +142,7 @@ const Navbar = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={openLoginModal}
-                    className="px-4 py-2 text-chocolate-700 font-medium text-sm hover:text-primary-600 transition-colors"
+                    className="px-4 py-2 text-chocolate-700 dark:text-dark-300 font-medium text-sm hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                   >
                     Login
                   </motion.button>
@@ -160,12 +157,11 @@ const Navbar = () => {
                 </div>
               )}
 
-              {/* Mobile Menu Button */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 text-chocolate-700"
+                className="lg:hidden p-2 text-chocolate-700 dark:text-dark-300"
               >
                 {isMobileMenuOpen ? (
                   <HiX className="w-6 h-6" />
@@ -185,7 +181,7 @@ const Navbar = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden bg-white border-t border-cream-200"
+              className="lg:hidden bg-white dark:bg-dark-900 border-t border-cream-200 dark:border-dark-700"
             >
               <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
                 {navLinks.map((link, index) => (
@@ -199,7 +195,10 @@ const Navbar = () => {
                       to={link.path}
                       className={({ isActive }) => `
                         block py-2 text-lg font-medium transition-colors
-                        ${isActive ? 'text-primary-600' : 'text-chocolate-700'}
+                        ${isActive 
+                          ? 'text-primary-600 dark:text-primary-400' 
+                          : 'text-chocolate-700 dark:text-dark-300'
+                        }
                       `}
                     >
                       {link.name}
@@ -208,10 +207,10 @@ const Navbar = () => {
                 ))}
                 
                 {!user && (
-                  <div className="pt-4 border-t border-cream-200 space-y-3">
+                  <div className="pt-4 border-t border-cream-200 dark:border-dark-700 space-y-3">
                     <button
                       onClick={openLoginModal}
-                      className="w-full py-3 text-center font-medium text-chocolate-700 border border-chocolate-300 rounded-xl"
+                      className="w-full py-3 text-center font-medium text-chocolate-700 dark:text-dark-300 border border-chocolate-300 dark:border-dark-600 rounded-xl"
                     >
                       Login
                     </button>
@@ -229,7 +228,6 @@ const Navbar = () => {
         </AnimatePresence>
       </motion.nav>
 
-      {/* Modals */}
       <LoginModal />
       <SignupModal />
     </>

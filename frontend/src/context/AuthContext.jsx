@@ -16,33 +16,77 @@ export const AuthProvider = ({ children }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
 
-  useEffect(() => {
-    // Check for stored user on mount
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+  // Fetch full user data
+  const fetchUserProfile = async (token) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setUser(data.data.user)
+        localStorage.setItem('user', JSON.stringify(data.data.user))
+        return data.data.user
+      } else {
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+        return null
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+      return null
     }
-    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        setIsLoading(false)
+        return
+      }
+
+      await fetchUserProfile(token)
+      setIsLoading(false)
+    }
+
+    initializeAuth()
   }, [])
 
   const login = async (email, password) => {
-    // Simulated login - replace with actual API call
     setIsLoading(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      const userData = {
-        id: '1',
-        name: 'John Doe',
-        email,
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
-        role: email.includes('admin') ? 'admin' : 'user'
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.message || 'Login failed')
+
+      // Save token first
+      localStorage.setItem('token', data.data.token)
+
+      // Fetch full user profile (with all fields)
+      const fullUser = await fetchUserProfile(data.data.token)
+
+      if (!fullUser) {
+        // Fallback to login response if fetch fails
+        setUser(data.data.user)
+        localStorage.setItem('user', JSON.stringify(data.data.user))
       }
-      setUser(userData)
-      localStorage.setItem('user', JSON.stringify(userData))
+
       setIsLoginModalOpen(false)
       return { success: true }
     } catch (error) {
-      return { success: false, error: 'Login failed' }
+      return { success: false, error: error.message }
     } finally {
       setIsLoading(false)
     }
@@ -51,20 +95,32 @@ export const AuthProvider = ({ children }) => {
   const signup = async (name, email, password) => {
     setIsLoading(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      const userData = {
-        id: Date.now().toString(),
-        name,
-        email,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-        role: 'user'
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.message || 'Signup failed')
+
+      // Save token first
+      localStorage.setItem('token', data.data.token)
+
+      // Fetch full user profile (with all fields)
+      const fullUser = await fetchUserProfile(data.data.token)
+
+      if (!fullUser) {
+        // Fallback to signup response if fetch fails
+        setUser(data.data.user)
+        localStorage.setItem('user', JSON.stringify(data.data.user))
       }
-      setUser(userData)
-      localStorage.setItem('user', JSON.stringify(userData))
+
       setIsSignupModalOpen(false)
       return { success: true }
     } catch (error) {
-      return { success: false, error: 'Signup failed' }
+      return { success: false, error: error.message }
     } finally {
       setIsLoading(false)
     }
@@ -73,6 +129,15 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
+    localStorage.removeItem('token')  // ← Also remove token
+  }
+
+  // Refresh user data (useful after profile updates)
+  const refreshUser = async () => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      await fetchUserProfile(token)
+    }
   }
 
   const openLoginModal = () => {
@@ -92,12 +157,14 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    setUser,
     isLoading,
     isLoginModalOpen,
     isSignupModalOpen,
     login,
     signup,
     logout,
+    refreshUser,            // ← ADD THIS
     openLoginModal,
     openSignupModal,
     closeModals,
