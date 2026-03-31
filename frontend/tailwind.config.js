@@ -1,0 +1,135 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#fdf8f6',
+          100: '#f9ebe5',
+          200: '#f4d4c8',
+          300: '#e9b8a5',
+          400: '#dc9277',
+          500: '#cf6f4d',
+          600: '#c05a3c',
+          700: '#a04833',
+          800: '#843d2f',
+          900: '#6d3529',
+        },
+        chocolate: {
+          50: '#faf5f0',
+          100: '#f0e4d7',
+          200: '#e0c7ad',
+          300: '#cda57d',
+          400: '#be8658',
+          500: '#b0703f',
+          600: '#9a5a35',
+          700: '#7d452d',
+          800: '#693a2a',
+          900: '#3d2218',
+        },
+        gold: {
+          50: '#fdfdf5',
+          100: '#fcfae8',
+          200: '#f7f3c7',
+          300: '#f0e8a0',
+          400: '#e5d56e',
+          500: '#d4be3e',
+          600: '#b99e2c',
+          700: '#967b25',
+          800: '#7a6324',
+          900: '#675223',
+        },
+        cream: {
+          50: '#fefdfb',
+          100: '#fdf9f3',
+          200: '#faf3e8',
+          300: '#f5e9d8',
+          400: '#eedcc5',
+          500: '#e5ccae',
+          600: '#d4b18d',
+          700: '#c09570',
+          800: '#a67b58',
+          900: '#8a6548',
+        }
+      },
+      fontFamily: {
+        heading: ['Playfair Display', 'serif'],
+        body: ['Poppins', 'sans-serif'],
+        script: ['Dancing Script', 'cursive'],
+      },
+      animation: {
+        'float': 'float 6s ease-in-out infinite',
+        'float-slow': 'float 8s ease-in-out infinite',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'bounce-slow': 'bounce 3s infinite',
+        'spin-slow': 'spin 8s linear infinite',
+        'wiggle': 'wiggle 1s ease-in-out infinite',
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'slide-up': 'slideUp 0.5s ease-out',
+        'slide-down': 'slideDown 0.5s ease-out',
+        'slide-left': 'slideLeft 0.5s ease-out',
+        'slide-right': 'slideRight 0.5s ease-out',
+        'scale-in': 'scaleIn 0.3s ease-out',
+        'gradient': 'gradient 8s ease infinite',
+        'shimmer': 'shimmer 2s linear infinite',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(-3deg)' },
+          '50%': { transform: 'rotate(3deg)' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        slideDown: {
+          '0%': { transform: 'translateY(-20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        slideLeft: {
+          '0%': { transform: 'translateX(20px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        slideRight: {
+          '0%': { transform: 'translateX(-20px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.9)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        gradient: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'hero-pattern': "url('/patterns/hero-pattern.svg')",
+      },
+      boxShadow: {
+        'elegant': '0 4px 20px -2px rgba(0, 0, 0, 0.1)',
+        'elegant-lg': '0 10px 40px -10px rgba(0, 0, 0, 0.15)',
+        'gold': '0 4px 20px -2px rgba(212, 190, 62, 0.3)',
+        'chocolate': '0 4px 20px -2px rgba(61, 34, 24, 0.3)',
+      },
+    },
+  },
+  plugins: [],
+}
