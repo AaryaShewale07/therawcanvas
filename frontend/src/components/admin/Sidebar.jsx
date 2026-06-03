@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { 
+import {
   HiOutlineHome,
   HiOutlinePhotograph,
   HiOutlineCake,
@@ -10,16 +10,25 @@ import {
   HiOutlineCog,
   HiOutlineLogout,
   HiOutlineDocumentText,
-  HiOutlineChartBar
+  HiOutlineChartBar,
+  HiOutlineTicket,
+  HiOutlineShoppingBag,  // ⭐ MISSING IMPORT — NOW FIXED
 } from 'react-icons/hi'
 import { useAuth } from '../../context/AuthContext'
 
 const menuItems = [
-  { 
+  {
     title: 'Overview',
     items: [
       { name: 'Dashboard', icon: HiOutlineHome, path: '/admin' },
       { name: 'Analytics', icon: HiOutlineChartBar, path: '/admin/analytics' },
+    ]
+  },
+  {
+    title: 'Orders',  // ⭐ NEW SECTION (better organization)
+    items: [
+      { name: 'All Orders', icon: HiOutlineShoppingBag, path: '/admin/orders' },
+      { name: 'Bookings', icon: HiOutlineTicket, path: '/admin/bookings' },
     ]
   },
   {
@@ -80,8 +89,8 @@ const Sidebar = () => {
                     end={item.path === '/admin'}
                     className={({ isActive }) => `
                       flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all
-                      ${isActive 
-                        ? 'bg-primary-500/20 text-primary-400 border-r-4 border-primary-500' 
+                      ${isActive
+                        ? 'bg-primary-500/20 text-primary-400 border-r-4 border-primary-500'
                         : 'text-cream-300 hover:bg-chocolate-800 hover:text-white'
                       }
                     `}

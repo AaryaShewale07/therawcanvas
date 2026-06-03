@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  HiOutlineMenuAlt3, 
-  HiX, 
+import {
+  HiOutlineMenuAlt3,
+  HiX,
   HiOutlineShoppingBag,
   HiOutlineHeart
 } from 'react-icons/hi'
@@ -11,6 +11,8 @@ import { useAuth } from '../../context/AuthContext'
 import UserDropdown from '../auth/UserDropdown'
 import LoginModal from '../auth/LoginModal'
 import SignupModal from '../auth/SignupModal'
+import { useCart } from '../../context/CartContext'
+import { useWishlist } from '../../context/WishlistContext'
 
 const navLinks = [
   { name: 'Home', path: '/' },
@@ -20,17 +22,35 @@ const navLinks = [
   { name: 'Workshops', path: '/workshops' },
 ]
 
+
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { user, isLoginModalOpen, isSignupModalOpen, openLoginModal, openSignupModal } = useAuth()
+  const lastScrollY = useRef(0)
+  const { user, openLoginModal, openSignupModal } = useAuth()
   const location = useLocation()
+  const { cartCount } = useCart()
+  const { wishlistCount } = useWishlist()
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
+      const currentScrollY = window.scrollY
+      setIsScrolled(currentScrollY > 50)
+
+      if (currentScrollY < 10) {
+        setIsVisible(true)
+      } else if (currentScrollY > lastScrollY.current) {
+        setIsVisible(false)
+        setIsMobileMenuOpen(false)
+      } else {
+        setIsVisible(true)
+      }
+
+      lastScrollY.current = currentScrollY
     }
-    window.addEventListener('scroll', handleScroll)
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -42,13 +62,12 @@ const Navbar = () => {
     <>
       <motion.nav
         initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          isScrolled 
-            ? 'bg-white/95 dark:bg-dark-900/95 backdrop-blur-md shadow-elegant dark:shadow-dark-elegant py-3' 
-            : 'bg-transparent py-5'
-        }`}
+        animate={{ y: isVisible ? 0 : -100 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className={`fixed top-0 left-0 right-0 z-50 text-white transition-all duration-300 ${isScrolled
+          ? 'bg-[#471701]/95 backdrop-blur-md shadow-lg py-2'
+          : 'bg-[#471701] py-4'
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
@@ -59,14 +78,18 @@ const Navbar = () => {
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-2"
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-500 via-gold-500 to-chocolate-600 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-white font-script text-xl">A&C</span>
+                {/* NEW — Your JPG logo */}
+                <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg bg-white">
+                  <img
+                    src="/logo.jpg"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="font-heading font-bold text-xl text-chocolate-900 dark:text-dark-50">
-                    Art & Chocolates
+                  <h1 className="font-heading font-bold text-xl text-white">
+                    TheRawCanvasStudio
                   </h1>
-                  <p className="text-xs text-chocolate-500 dark:text-dark-400 font-script">
+                  <p className="text-xs text-cream-300 font-script">
                     Handcrafted Elegance
                   </p>
                 </div>
@@ -81,10 +104,10 @@ const Navbar = () => {
                   to={link.path}
                   className={({ isActive }) => `
                     relative font-medium text-sm uppercase tracking-wider
-                    transition-colors duration-300 link-hover
-                    ${isActive 
-                      ? 'text-primary-600 dark:text-primary-400' 
-                      : 'text-chocolate-700 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400'
+                    transition-colors duration-300
+                    ${isActive
+                      ? 'text-gold-400'
+                      : 'text-white hover:text-gold-400'
                     }
                   `}
                 >
@@ -98,7 +121,7 @@ const Navbar = () => {
                       {isActive && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary-500 rounded-full"
+                          className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gold-400 rounded-full"
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         />
                       )}
@@ -110,29 +133,47 @@ const Navbar = () => {
 
             {/* Right Side */}
             <div className="flex items-center gap-4">
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="hidden sm:flex relative p-2 text-chocolate-700 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-              >
-                <HiOutlineHeart className="w-6 h-6" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
-                  3
-                </span>
-              </motion.button>
+              {/* ⭐ Wishlist — now Link + live counter */}
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Link
+                  to="/wishlist"
+                  className="hidden sm:flex relative p-2 text-white hover:text-gold-400 transition-colors"
+                >
+                  <HiOutlineHeart className="w-6 h-6" />
+                  {wishlistCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      key={wishlistCount}
+                      className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gold-500 text-chocolate-900 text-xs rounded-full flex items-center justify-center font-bold"
+                    >
+                      {wishlistCount}
+                    </motion.span>
+                  )}
+                </Link>
+              </motion.div>
 
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="hidden sm:flex relative p-2 text-chocolate-700 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-              >
-                <HiOutlineShoppingBag className="w-6 h-6" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-gold-500 text-chocolate-900 text-xs rounded-full flex items-center justify-center">
-                  2
-                </span>
-              </motion.button>
+              {/* ⭐ Cart — now Link + live counter */}
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Link
+                  to="/cart"
+                  className="hidden sm:flex relative p-2 text-white hover:text-gold-400 transition-colors"
+                >
+                  <HiOutlineShoppingBag className="w-6 h-6" />
+                  {cartCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      key={cartCount}
+                      className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gold-500 text-chocolate-900 text-xs rounded-full flex items-center justify-center font-bold"
+                    >
+                      {cartCount}
+                    </motion.span>
+                  )}
+                </Link>
+              </motion.div>
 
-              <div className="hidden sm:block w-px h-6 bg-chocolate-200 dark:bg-dark-600" />
+              <div className="hidden sm:block w-px h-6 bg-cream-300/30" />
 
               {user ? (
                 <UserDropdown />
@@ -142,7 +183,7 @@ const Navbar = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={openLoginModal}
-                    className="px-4 py-2 text-chocolate-700 dark:text-dark-300 font-medium text-sm hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                    className="px-4 py-2 text-white font-medium text-sm hover:text-gold-400 transition-colors"
                   >
                     Login
                   </motion.button>
@@ -161,7 +202,7 @@ const Navbar = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 text-chocolate-700 dark:text-dark-300"
+                className="lg:hidden p-2 text-white"
               >
                 {isMobileMenuOpen ? (
                   <HiX className="w-6 h-6" />
@@ -181,7 +222,7 @@ const Navbar = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden bg-white dark:bg-dark-900 border-t border-cream-200 dark:border-dark-700"
+              className="lg:hidden bg-[#471701] border-t border-chocolate-700"
             >
               <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
                 {navLinks.map((link, index) => (
@@ -195,9 +236,9 @@ const Navbar = () => {
                       to={link.path}
                       className={({ isActive }) => `
                         block py-2 text-lg font-medium transition-colors
-                        ${isActive 
-                          ? 'text-primary-600 dark:text-primary-400' 
-                          : 'text-chocolate-700 dark:text-dark-300'
+                        ${isActive
+                          ? 'text-gold-400'
+                          : 'text-white hover:text-gold-400'
                         }
                       `}
                     >
@@ -205,12 +246,43 @@ const Navbar = () => {
                     </NavLink>
                   </motion.div>
                 ))}
-                
+
+                {/* ⭐ Mobile: Wishlist + Cart links */}
+                <div className="pt-4 border-t border-chocolate-700 space-y-3">
+                  <Link
+                    to="/wishlist"
+                    className="flex items-center justify-between py-2 text-white hover:text-gold-400"
+                  >
+                    <span className="flex items-center gap-2">
+                      <HiOutlineHeart className="w-5 h-5" /> Wishlist
+                    </span>
+                    {wishlistCount > 0 && (
+                      <span className="bg-gold-500 text-chocolate-900 text-xs font-bold px-2 py-0.5 rounded-full">
+                        {wishlistCount}
+                      </span>
+                    )}
+                  </Link>
+
+                  <Link
+                    to="/cart"
+                    className="flex items-center justify-between py-2 text-white hover:text-gold-400"
+                  >
+                    <span className="flex items-center gap-2">
+                      <HiOutlineShoppingBag className="w-5 h-5" /> Cart
+                    </span>
+                    {cartCount > 0 && (
+                      <span className="bg-gold-500 text-chocolate-900 text-xs font-bold px-2 py-0.5 rounded-full">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Link>
+                </div>
+
                 {!user && (
-                  <div className="pt-4 border-t border-cream-200 dark:border-dark-700 space-y-3">
+                  <div className="pt-4 border-t border-chocolate-700 space-y-3">
                     <button
                       onClick={openLoginModal}
-                      className="w-full py-3 text-center font-medium text-chocolate-700 dark:text-dark-300 border border-chocolate-300 dark:border-dark-600 rounded-xl"
+                      className="w-full py-3 text-center font-medium text-white border border-cream-300/30 rounded-xl"
                     >
                       Login
                     </button>

@@ -1,247 +1,88 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { 
-  HiOutlineHeart, 
-  HiOutlineShoppingBag, 
-  HiOutlineTrash,
-  HiOutlineEye
-} from 'react-icons/hi'
-import { pageTransition, staggerContainer, staggerItem } from '../../utils/animations'
-import toast from 'react-hot-toast'
-
-// Mock wishlist data
-const initialWishlist = [
-  {
-    id: 1,
-    name: 'Abstract Sunset Dreams',
-    category: 'Art',
-    price: 299,
-    originalPrice: 399,
-    image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400',
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: 'Belgian Dark Truffle Collection',
-    category: 'Chocolates',
-    price: 49.99,
-    image: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=400',
-    inStock: true,
-  },
-  {
-    id: 3,
-    name: 'Romantic Indulgence Box',
-    category: 'Gifting',
-    price: 129.99,
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400',
-    inStock: true,
-  },
-  {
-    id: 4,
-    name: 'Ocean Whispers Canvas',
-    category: 'Art',
-    price: 189,
-    image: 'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=400',
-    inStock: false,
-  },
-  {
-    id: 5,
-    name: 'Salted Caramel Bonbons',
-    category: 'Chocolates',
-    price: 34.99,
-    image: 'https://images.unsplash.com/photo-1548907040-4bea42c3d2fc?w=400',
-    inStock: true,
-  },
-]
+import { Heart, Trash2 } from 'lucide-react'
+import { useWishlist } from '../../context/WishlistContext'
+import { useCart } from '../../context/CartContext'
+import { useAuth } from '../../context/AuthContext'
 
 const Wishlist = () => {
-  const [wishlist, setWishlist] = useState(initialWishlist)
+  const { wishlist, toggleWishlist } = useWishlist()
+  const { addToCart } = useCart()
+  const { user } = useAuth()
 
-  const removeFromWishlist = (id) => {
-    setWishlist(prev => prev.filter(item => item.id !== id))
-    toast.success('Removed from wishlist')
+  if (!user) {
+    return (
+      <div className="max-w-2xl mx-auto py-20 text-center">
+        <Heart size={80} className="mx-auto text-red-300 mb-4" />
+        <h2 className="text-3xl font-bold text-amber-900 mb-3">Please login</h2>
+        <p className="text-gray-600 mb-6">Login to see your wishlist</p>
+        <Link to="/" className="bg-amber-700 text-white px-8 py-3 rounded-full inline-block">
+          Go Home
+        </Link>
+      </div>
+    )
   }
 
-  const addToCart = (item) => {
-    toast.success(`${item.name} added to cart!`)
-  }
-
-  const clearWishlist = () => {
-    setWishlist([])
-    toast.success('Wishlist cleared')
+  if (!wishlist.posts || wishlist.posts.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto py-20 text-center">
+        <Heart size={80} className="mx-auto text-red-300 mb-4" />
+        <h2 className="text-3xl font-bold text-amber-900 mb-3">Your wishlist is empty</h2>
+        <p className="text-gray-600 mb-6">Save your favorite items here!</p>
+        <Link to="/art" className="bg-amber-700 text-white px-8 py-3 rounded-full inline-block hover:bg-amber-800">
+          Browse Art
+        </Link>
+      </div>
+    )
   }
 
   return (
-    <motion.div
-      variants={pageTransition}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      className="pt-24 pb-16"
-    >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12"
-        >
-          <div>
-            <h1 className="text-4xl font-heading font-bold text-chocolate-900 mb-2">
-              My Wishlist
-            </h1>
-            <p className="text-chocolate-600">
-              {wishlist.length} {wishlist.length === 1 ? 'item' : 'items'} saved for later
-            </p>
-          </div>
-          {wishlist.length > 0 && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={clearWishlist}
-              className="mt-4 sm:mt-0 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
-            >
-              <HiOutlineTrash className="w-5 h-5" />
-              Clear All
-            </motion.button>
-          )}
-        </motion.div>
+    <div className="max-w-7xl mx-auto px-4 py-10">
+      <h1 className="text-4xl font-bold text-amber-900 mb-8">
+        My Wishlist ({wishlist.posts.length})
+      </h1>
 
-        {/* Wishlist Items */}
-        {wishlist.length > 0 ? (
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {wishlist.posts.map((post) => (
+          <div
+            key={post._id}
+            className="bg-white rounded-2xl shadow-md overflow-hidden group hover:shadow-xl transition"
           >
-            <AnimatePresence>
-              {wishlist.map((item) => (
-                <motion.div
-                  key={item.id}
-                  variants={staggerItem}
-                  layout
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  whileHover={{ y: -8 }}
-                  className="group bg-white rounded-2xl shadow-elegant overflow-hidden"
-                >
-                  {/* Image */}
-                  <div className="relative aspect-square overflow-hidden">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    
-                    {/* Out of Stock Overlay */}
-                    {!item.inStock && (
-                      <div className="absolute inset-0 bg-chocolate-900/60 flex items-center justify-center">
-                        <span className="px-4 py-2 bg-white text-chocolate-900 font-semibold rounded-full">
-                          Out of Stock
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Actions Overlay */}
-                    <div className="absolute inset-0 bg-chocolate-900/0 group-hover:bg-chocolate-900/20 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg"
-                      >
-                        <HiOutlineEye className="w-5 h-5 text-chocolate-700" />
-                      </motion.button>
-                    </div>
-
-                    {/* Category Badge */}
-                    <span className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-semibold text-chocolate-700">
-                      {item.category}
-                    </span>
-
-                    {/* Remove Button */}
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => removeFromWishlist(item.id)}
-                      className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg text-red-500 hover:bg-red-50 transition-colors"
-                    >
-                      <HiOutlineHeart className="w-5 h-5 fill-current" />
-                    </motion.button>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-5">
-                    <h3 className="font-semibold text-chocolate-900 mb-2 group-hover:text-primary-600 transition-colors">
-                      {item.name}
-                    </h3>
-                    
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold text-chocolate-900">
-                          ${item.price}
-                        </span>
-                        {item.originalPrice && (
-                          <span className="text-sm text-chocolate-400 line-through">
-                            ${item.originalPrice}
-                          </span>
-                        )}
-                      </div>
-                      {item.originalPrice && (
-                        <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full">
-                          {Math.round((1 - item.price / item.originalPrice) * 100)}% OFF
-                        </span>
-                      )}
-                    </div>
-
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => addToCart(item)}
-                      disabled={!item.inStock}
-                      className={`w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors ${
-                        item.inStock
-                          ? 'bg-primary-600 text-white hover:bg-primary-700'
-                          : 'bg-cream-200 text-chocolate-400 cursor-not-allowed'
-                      }`}
-                    >
-                      <HiOutlineShoppingBag className="w-5 h-5" />
-                      {item.inStock ? 'Add to Cart' : 'Out of Stock'}
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        ) : (
-          /* Empty State */
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-20"
-          >
-            <div className="w-32 h-32 bg-cream-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <HiOutlineHeart className="w-16 h-16 text-cream-400" />
-            </div>
-            <h2 className="text-2xl font-heading font-bold text-chocolate-900 mb-4">
-              Your wishlist is empty
-            </h2>
-            <p className="text-chocolate-500 mb-8 max-w-md mx-auto">
-              Start adding items you love to your wishlist. They'll appear here for easy access later.
-            </p>
-            <Link to="/chocolates">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-primary"
+            <Link to={`/product/${post._id}`} className="block relative">
+              <img
+                src={post.images?.[0]?.url || '/placeholder.png'}
+                alt={post.title}
+                className="w-full h-64 object-cover group-hover:scale-105 transition"
+              />
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  toggleWishlist(post._id)
+                }}
+                className="absolute top-3 right-3 bg-white p-2 rounded-full shadow hover:bg-red-50"
               >
-                Explore Products
-              </motion.button>
+                <Trash2 size={18} className="text-red-500" />
+              </button>
             </Link>
-          </motion.div>
-        )}
+
+            <div className="p-4">
+              <h3 className="font-bold text-amber-900 text-lg">{post.title}</h3>
+              {post.artist && (
+                <p className="text-sm text-amber-700">by {post.artist}</p>
+              )}
+              <div className="flex items-center justify-between mt-3">
+                <p className="font-bold text-amber-900">₹{post.price}</p>
+                <button
+                  onClick={() => addToCart(post._id, 1)}
+                  className="bg-amber-700 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-amber-800 transition"
+                >
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
-    </motion.div>
+    </div>
   )
 }
 

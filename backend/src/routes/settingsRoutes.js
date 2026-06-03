@@ -3,7 +3,8 @@ import {
   getAllSettings,
   getPreferences,
   updatePreferences,
-  enableTwoFactorAuth,
+  enable2FA,
+  verify2FA,
   disableTwoFactorAuth,
   getBackupCodesCount,
   regenerateBackupCodes,
@@ -14,31 +15,34 @@ import {
   cancelAccountDeletion,
   permanentlyDeleteAccount,
 } from '../controllers/settingsController.js'
-import { protect } from '../middleware/authMiddleware.js'
+
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router()
 
+// Protect all routes
 router.use(protect)
 
-// General
+// ==================== GENERAL ====================
 router.get('/', getAllSettings)
 
-// Preferences
+// ==================== PREFERENCES ====================
 router.get('/preferences', getPreferences)
 router.put('/preferences', updatePreferences)
 
-// Two-Factor Auth
-router.post('/2fa/enable', enableTwoFactorAuth)
+// ==================== TWO-FACTOR AUTH ====================
+router.post('/2fa/enable', enable2FA)
+router.post('/2fa/verify', verify2FA)
 router.post('/2fa/disable', disableTwoFactorAuth)
 router.get('/2fa/backup-codes', getBackupCodesCount)
 router.post('/2fa/regenerate-codes', regenerateBackupCodes)
 
-// Sessions
+// ==================== SESSIONS ====================
 router.get('/sessions', getActiveSessions)
 router.delete('/sessions/:id', revokeSession)
 router.delete('/sessions', revokeAllSessions)
 
-// Account Deletion
+// ==================== ACCOUNT DELETION ====================
 router.post('/delete-account', requestAccountDeletion)
 router.post('/cancel-deletion', cancelAccountDeletion)
 router.delete('/delete-account/confirm', permanentlyDeleteAccount)

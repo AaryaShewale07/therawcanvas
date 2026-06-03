@@ -69,7 +69,30 @@ const userSchema = new mongoose.Schema(
         rememberMe: Boolean,
       },
     ],
+    passwordResetToken: {
+      type: String,
+      default: null,
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null,
+    },
+    // Add to user schema
+    password: {
+      type: String,
+      required: true,
+      minlength: [8, 'Password must be at least 8 characters'],
+      validate: {
+        validator: function (v) {
+          // At least one uppercase, lowercase, number, special char
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v)
+        },
+        message: 'Password must contain uppercase, lowercase, number, and special character (@$!%*?&)',
+      },
+      select: false,
+    }
   },
+
   {
     timestamps: true,
   }

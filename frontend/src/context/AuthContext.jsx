@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const AuthContext = createContext()
 
+// ⭐ This export MUST exist
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
@@ -20,17 +21,17 @@ export const AuthProvider = ({ children }) => {
   const fetchUserProfile = async (token) => {
     try {
       const res = await fetch('http://localhost:5000/api/auth/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
-
       const data = await res.json()
 
       if (res.ok) {
-        setUser(data.data.user)
-        localStorage.setItem('user', JSON.stringify(data.data.user))
-        return data.data.user
+        const userData = data.data?.user || data.user
+        if (userData) {
+          setUser(userData)
+          localStorage.setItem('user', JSON.stringify(userData))
+          return userData
+        }
       } else {
         localStorage.removeItem('user')
         localStorage.removeItem('token')
@@ -45,8 +46,19 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('token')
+      const savedUser = localStorage.getItem('user')
 
-      if (!token) {
+      // Use cached user immediately
+      if (savedUser && savedUser !== 'undefined') {
+        try {
+          setUser(JSON.parse(savedUser))
+        } catch (e) {
+          localStorage.removeItem('user')
+        }
+      }
+
+      if (!token || token === 'undefined' || token === 'null') {
+        localStorage.removeItem('token')
         setIsLoading(false)
         return
       }
@@ -68,24 +80,29 @@ export const AuthProvider = ({ children }) => {
       })
 
       const data = await res.json()
+      console.log('🔍 LOGIN RESPONSE:', data)
 
       if (!res.ok) throw new Error(data.message || 'Login failed')
 
-      // Save token first
-      localStorage.setItem('token', data.data.token)
+      const token = data.data?.token
+      const userData = data.data?.user
 
-      // Fetch full user profile (with all fields)
-      const fullUser = await fetchUserProfile(data.data.token)
+      if (!token) {
+        throw new Error('Server did not return a token!')
+      }
 
-      if (!fullUser) {
-        // Fallback to login response if fetch fails
-        setUser(data.data.user)
-        localStorage.setItem('user', JSON.stringify(data.data.user))
+      localStorage.setItem('token', token)
+      console.log('✅ Token saved:', localStorage.getItem('token')?.substring(0, 30))
+
+      if (userData) {
+        setUser(userData)
+        localStorage.setItem('user', JSON.stringify(userData))
       }
 
       setIsLoginModalOpen(false)
       return { success: true }
     } catch (error) {
+      console.error('Login error:', error)
       return { success: false, error: error.message }
     } finally {
       setIsLoading(false)
@@ -102,19 +119,22 @@ export const AuthProvider = ({ children }) => {
       })
 
       const data = await res.json()
+      console.log('🔍 SIGNUP RESPONSE:', data)
 
       if (!res.ok) throw new Error(data.message || 'Signup failed')
 
-      // Save token first
-      localStorage.setItem('token', data.data.token)
+      const token = data.data?.token
+      const userData = data.data?.user
 
-      // Fetch full user profile (with all fields)
-      const fullUser = await fetchUserProfile(data.data.token)
+      if (!token) {
+        throw new Error('Server did not return a token!')
+      }
 
-      if (!fullUser) {
-        // Fallback to signup response if fetch fails
-        setUser(data.data.user)
-        localStorage.setItem('user', JSON.stringify(data.data.user))
+      localStorage.setItem('token', token)
+
+      if (userData) {
+        setUser(userData)
+        localStorage.setItem('user', JSON.stringify(userData))
       }
 
       setIsSignupModalOpen(false)
@@ -126,18 +146,56 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const verifyBackupCode = async (email, code) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/verify-backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Invalid backup code')
+
+      const token = data.data?.token
+      const userData = data.data?.user
+
+      if (token) localStorage.setItem('token', token)
+      if (userData) {
+        setUser(userData)
+        localStorage.setItem('user', JSON.stringify(userData))
+      }
+
+      setIsLoginModalOpen(false)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  }
+
+  const forgotPassword = async (email) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Failed to send reset email')
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  }
+
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
-    localStorage.removeItem('token')  // ← Also remove token
+    localStorage.removeItem('token')
   }
 
-  // Refresh user data (useful after profile updates)
   const refreshUser = async () => {
     const token = localStorage.getItem('token')
-    if (token) {
-      await fetchUserProfile(token)
-    }
+    if (token) await fetchUserProfile(token)
   }
 
   const openLoginModal = () => {
@@ -164,11 +222,13 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
-    refreshUser,            // ← ADD THIS
+    refreshUser,
     openLoginModal,
     openSignupModal,
     closeModals,
-    isAdmin: user?.role === 'admin'
+    verifyBackupCode,
+    forgotPassword,
+    isAdmin: user?.role === 'admin',
   }
 
   return (

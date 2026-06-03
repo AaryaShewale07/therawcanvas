@@ -1,398 +1,322 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { pageTransition, staggerContainer, staggerItem } from '../utils/animations'
-import { 
-  HiOutlineCalendar, 
-  HiOutlineClock, 
-  HiOutlineUserGroup,
-  HiOutlineLocationMarker,
+import {
   HiOutlineAcademicCap,
-  HiOutlineCheckCircle
+  HiOutlineSearch,
+  HiOutlineCalendar,
+  HiOutlineLocationMarker,
+  HiOutlineUserGroup,
+  HiOutlineClock,
 } from 'react-icons/hi'
+import api from '../utils/api'
+import BookingModal from '../components/workshops/BookingModal'
 
-const workshopCategories = ['All', 'Chocolate Making', 'Art Classes', 'Kids', 'Corporate']
+// Get all future slot dates from event
+const getFutureSlots = (event) => {
+  if (event.slots && event.slots.length > 0) {
+    return event.slots
+      .filter((s) => new Date(s.date) > new Date(Date.now() - 60 * 60 * 1000))
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+  }
+  if (event.eventDate && new Date(event.eventDate) > new Date(Date.now() - 60 * 60 * 1000)) {
+    return [{ date: event.eventDate, maxAttendees: event.maxAttendees, bookingsCount: event.bookingsCount }]
+  }
+  return []
+}
 
-const workshops = [
-  {
-    id: 1,
-    title: 'Chocolate Truffle Masterclass',
-    description: 'Learn the art of creating perfect chocolate truffles from scratch with our master chocolatier.',
-    instructor: 'Chef Marie Laurent',
-    date: '2024-02-15',
-    time: '2:00 PM - 5:00 PM',
-    duration: '3 hours',
-    location: 'Main Studio',
-    capacity: 12,
-    enrolled: 8,
-    price: 89,
-    image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600',
-    category: 'Chocolate Making',
-    level: 'Beginner',
-    highlights: ['Take home 24 truffles', 'Recipe booklet', 'Certificate'],
-  },
-  {
-    id: 2,
-    title: 'Watercolor Painting for Beginners',
-    description: 'Discover the beautiful world of watercolor painting with easy-to-follow techniques.',
-    instructor: 'Sarah Mitchell',
-    date: '2024-02-18',
-    time: '10:00 AM - 1:00 PM',
-    duration: '3 hours',
-    location: 'Art Studio',
-    capacity: 10,
-    enrolled: 6,
-    price: 75,
-    image: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=600',
-    category: 'Art Classes',
-    level: 'Beginner',
-    highlights: ['All materials included', '2 finished paintings', 'Technique guide'],
-  },
-  {
-    id: 3,
-    title: 'Kids Chocolate Adventure',
-    description: 'A fun-filled workshop where kids create their own chocolate treats and decorations.',
-    instructor: 'Chef Tom Baker',
-    date: '2024-02-20',
-    time: '10:00 AM - 12:00 PM',
-    duration: '2 hours',
-    location: 'Kids Workshop Room',
-    capacity: 15,
-    enrolled: 12,
-    price: 45,
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600',
-    category: 'Kids',
-    level: 'All Ages',
-    highlights: ['Age 6-12', 'Take home treats', 'Fun activities'],
-  },
-  {
-    id: 4,
-    title: 'Corporate Team Building - Chocolate Edition',
-    description: 'Bond with your team while creating delicious chocolate masterpieces together.',
-    instructor: 'Chef Marie Laurent',
-    date: '2024-02-22',
-    time: '2:00 PM - 6:00 PM',
-    duration: '4 hours',
-    location: 'Private Suite',
-    capacity: 20,
-    enrolled: 15,
-    price: 150,
-    image: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600',
-    category: 'Corporate',
-    level: 'All Levels',
-    highlights: ['Team competition', 'Catering included', 'Customizable'],
-  },
-  {
-    id: 5,
-    title: 'Advanced Chocolate Tempering',
-    description: 'Master the technical art of tempering chocolate for professional results.',
-    instructor: 'Chef Pierre Dubois',
-    date: '2024-02-25',
-    time: '3:00 PM - 7:00 PM',
-    duration: '4 hours',
-    location: 'Main Studio',
-    capacity: 8,
-    enrolled: 5,
-    price: 120,
-    image: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=600',
-    category: 'Chocolate Making',
-    level: 'Advanced',
-    highlights: ['Professional techniques', 'Premium chocolate', 'Certification'],
-  },
-  {
-    id: 6,
-    title: 'Abstract Art Expression',
-    description: 'Express yourself through abstract art using various mediums and techniques.',
-    instructor: 'Alex Turner',
-    date: '2024-02-28',
-    time: '6:00 PM - 9:00 PM',
-    duration: '3 hours',
-    location: 'Art Studio',
-    capacity: 12,
-    enrolled: 9,
-    price: 85,
-    image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600',
-    category: 'Art Classes',
-    level: 'Intermediate',
-    highlights: ['Large canvas', 'Wine & cheese', 'Take home artwork'],
-  },
-]
+// Get total seats info from all slots
+const getSeatsInfo = (event) => {
+  const slots = getFutureSlots(event)
+  if (slots.length === 0) {
+    return { total: 0, booked: 0, available: 0 }
+  }
+  const total = slots.reduce((sum, s) => sum + s.maxAttendees, 0)
+  const booked = slots.reduce((sum, s) => sum + (s.bookingsCount || 0), 0)
+  return { total, booked, available: total - booked }
+}
+
+// Determine event status
+const getEventStatus = (event) => {
+  const slots = getFutureSlots(event)
+  if (slots.length === 0) return { label: 'Ended', color: 'gray', canBook: false }
+
+  const seatsInfo = getSeatsInfo(event)
+  if (seatsInfo.available <= 0) return { label: 'Sold Out', color: 'red', canBook: false }
+
+  return { label: 'Book Now', color: 'purple', canBook: true }
+}
+
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString('en-IN', {
+    weekday: 'short', day: 'numeric', month: 'short',
+  })
+}
+
+const formatTime = (date) => {
+  return new Date(date).toLocaleTimeString('en-IN', {
+    hour: '2-digit', minute: '2-digit',
+  })
+}
 
 const Workshops = () => {
-  const [selectedCategory, setSelectedCategory] = useState('All')
-  const [selectedWorkshop, setSelectedWorkshop] = useState(null)
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedEvent, setSelectedEvent] = useState(null)
+  const [, setTick] = useState(0)
 
-  const filteredWorkshops = workshops.filter(
-    workshop => selectedCategory === 'All' || workshop.category === selectedCategory
-  )
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric' 
-    })
+  const fetchData = async () => {
+    try {
+      const res = await api.get('/posts', { params: { category: 'workshops' } })
+      setItems(res.data.data || [])
+    } catch (err) {
+      console.error('Failed to load workshops:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  return (
-    <motion.div
-      variants={pageTransition}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      className="pt-24"
-    >
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-purple-50 via-cream-50 to-white py-20 relative overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
-            className="absolute -top-20 -right-20 w-80 h-80 border border-purple-200 rounded-full"
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
-            className="absolute -bottom-10 -left-10 w-60 h-60 border border-primary-200 rounded-full"
-          />
-        </div>
+  useEffect(() => {
+    fetchData()
+  }, [])
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center max-w-3xl mx-auto"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', delay: 0.2 }}
-              className="w-20 h-20 bg-gradient-to-br from-purple-500 to-primary-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg"
-            >
-              <HiOutlineAcademicCap className="w-10 h-10 text-white" />
-            </motion.div>
-            
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const filtered = items
+    .filter((item) => item.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      const aSlots = getFutureSlots(a)
+      const bSlots = getFutureSlots(b)
+      const aTime = aSlots[0] ? new Date(aSlots[0].date).getTime() : Infinity
+      const bTime = bSlots[0] ? new Date(bSlots[0].date).getTime() : Infinity
+      return aTime - bTime
+    })
+
+  const handleBookingSuccess = () => fetchData()
+
+  return (
+    <motion.div variants={pageTransition} initial="hidden" animate="visible" exit="exit" className="pt-24">
+      {/* Hero */}
+      <section className="bg-gradient-to-b from-purple-50 to-cream-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-3xl mx-auto">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-6">
+              <HiOutlineAcademicCap className="w-8 h-8 text-primary-600" />
+            </div>
             <h1 className="text-4xl md:text-6xl font-heading font-bold text-chocolate-900 mb-6">
               Creative <span className="gradient-text">Workshops</span>
             </h1>
             <p className="text-lg text-chocolate-600 mb-8">
-              Immerse yourself in hands-on experiences led by expert instructors. 
-              Learn the art of chocolate making and creative expression.
+              Learn from master artisans. Join hands-on workshops and unleash your creative potential.
             </p>
-
-            {/* Stats */}
-            <div className="flex justify-center gap-8 md:gap-16">
-              {[
-                { value: '50+', label: 'Workshops' },
-                { value: '1000+', label: 'Students' },
-                { value: '4.9', label: 'Rating' },
-              ].map((stat, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                  className="text-center"
-                >
-                  <p className="text-3xl font-bold text-primary-600">{stat.value}</p>
-                  <p className="text-sm text-chocolate-500">{stat.label}</p>
-                </motion.div>
-              ))}
+            <div className="relative max-w-md mx-auto">
+              <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
+              <input
+                type="text"
+                placeholder="Search workshops..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-white rounded-full shadow-elegant border-2 border-transparent focus:border-purple-500 focus:outline-none"
+              />
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Main Content */}
-      <section className="py-16 bg-white">
+      {/* Workshop Cards */}
+      <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Category Filters */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-wrap justify-center gap-3 mb-12"
-          >
-            {workshopCategories.map((category) => (
-              <motion.button
-                key={category}
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
-                  selectedCategory === category
-                    ? 'bg-gradient-to-r from-purple-500 to-primary-500 text-white shadow-lg'
-                    : 'bg-cream-100 text-chocolate-700 hover:bg-cream-200'
-                }`}
-              >
-                {category}
-              </motion.button>
-            ))}
-          </motion.div>
+          <p className="text-chocolate-500 mb-6">
+            Showing {filtered.length} {filtered.length === 1 ? 'workshop' : 'workshops'}
+          </p>
 
-          {/* Workshops Grid */}
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
-            {filteredWorkshops.map((workshop) => (
-              <motion.div
-                key={workshop.id}
-                variants={staggerItem}
-                whileHover={{ y: -8 }}
-                className="group bg-white rounded-3xl overflow-hidden shadow-elegant hover:shadow-elegant-lg transition-all duration-500 border border-cream-100"
-              >
-                {/* Image */}
-                <div className="relative aspect-video overflow-hidden">
-                  <img
-                    src={workshop.image}
-                    alt={workshop.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-chocolate-900/60 to-transparent" />
-                  
-                  {/* Level Badge */}
-                  <span className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold ${
-                    workshop.level === 'Beginner' ? 'bg-green-500 text-white' :
-                    workshop.level === 'Intermediate' ? 'bg-yellow-500 text-chocolate-900' :
-                    workshop.level === 'Advanced' ? 'bg-red-500 text-white' :
-                    'bg-blue-500 text-white'
-                  }`}>
-                    {workshop.level}
-                  </span>
-
-                  {/* Category */}
-                  <span className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-semibold text-chocolate-700">
-                    {workshop.category}
-                  </span>
-
-                  {/* Date Overlay */}
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <p className="text-sm opacity-90">{formatDate(workshop.date)}</p>
-                    <p className="text-xs opacity-75">{workshop.time}</p>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6">
-                  <h3 className="font-heading font-bold text-xl text-chocolate-900 mb-2 group-hover:text-primary-600 transition-colors">
-                    {workshop.title}
-                  </h3>
-                  <p className="text-chocolate-500 text-sm mb-4 line-clamp-2">
-                    {workshop.description}
-                  </p>
-
-                  {/* Info Grid */}
-                  <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                    <div className="flex items-center gap-2 text-chocolate-600">
-                      <HiOutlineClock className="w-4 h-4 text-primary-500" />
-                      {workshop.duration}
-                    </div>
-                    <div className="flex items-center gap-2 text-chocolate-600">
-                      <HiOutlineLocationMarker className="w-4 h-4 text-primary-500" />
-                      {workshop.location}
-                    </div>
-                    <div className="flex items-center gap-2 text-chocolate-600">
-                      <HiOutlineUserGroup className="w-4 h-4 text-primary-500" />
-                      {workshop.enrolled}/{workshop.capacity} enrolled
-                    </div>
-                    <div className="flex items-center gap-2 text-chocolate-600">
-                      <HiOutlineAcademicCap className="w-4 h-4 text-primary-500" />
-                      {workshop.instructor}
-                    </div>
-                  </div>
-
-                  {/* Highlights */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {workshop.highlights.map((highlight, index) => (
-                      <span
-                        key={index}
-                        className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 text-xs rounded-full"
-                      >
-                        <HiOutlineCheckCircle className="w-3 h-3" />
-                        {highlight}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-cream-100">
-                    <div>
-                      <span className="text-2xl font-bold text-chocolate-900">
-                        ${workshop.price}
-                      </span>
-                      <span className="text-sm text-chocolate-400">/person</span>
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      disabled={workshop.enrolled >= workshop.capacity}
-                      className={`px-6 py-3 rounded-full font-medium text-sm transition-all ${
-                        workshop.enrolled >= workshop.capacity
-                          ? 'bg-cream-200 text-chocolate-400 cursor-not-allowed'
-                          : 'bg-primary-500 text-white hover:bg-primary-600'
-                      }`}
-                    >
-                      {workshop.enrolled >= workshop.capacity ? 'Sold Out' : 'Book Now'}
-                    </motion.button>
-                  </div>
-
-                  {/* Capacity Bar */}
-                  <div className="mt-4">
-                    <div className="h-2 bg-cream-100 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${(workshop.enrolled / workshop.capacity) * 100}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 1, delay: 0.2 }}
-                        className={`h-full rounded-full ${
-                          workshop.enrolled >= workshop.capacity
-                            ? 'bg-red-500'
-                            : workshop.enrolled >= workshop.capacity * 0.8
-                            ? 'bg-yellow-500'
-                            : 'bg-green-500'
-                        }`}
-                      />
-                    </div>
-                    <p className="text-xs text-chocolate-400 mt-1">
-                      {workshop.capacity - workshop.enrolled} spots remaining
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Private Workshops CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-20 text-center"
-          >
-            <div className="bg-gradient-to-r from-purple-100 via-cream-100 to-primary-100 rounded-3xl p-12">
-              <h3 className="text-3xl font-heading font-bold text-chocolate-900 mb-4">
-                Looking for a Private Workshop?
-              </h3>
-              <p className="text-chocolate-600 mb-8 max-w-2xl mx-auto">
-                We offer customized private workshops for groups, birthdays, 
-                bachelorette parties, and corporate events. Create memorable 
-                experiences for your team or loved ones.
-              </p>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-chocolate-800 text-white font-semibold rounded-full hover:bg-chocolate-900 transition-colors"
-              >
-                Inquire About Private Events
-              </motion.button>
+          {loading && (
+            <div className="text-center py-20">
+              <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto" />
             </div>
-          </motion.div>
+          )}
+
+          {!loading && (
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid md:grid-cols-2 gap-8">
+              {filtered.map((event) => {
+                const status = getEventStatus(event)
+                const seatsInfo = getSeatsInfo(event)
+                const futureSlots = getFutureSlots(event)
+                const hasMultipleSlots = futureSlots.length > 1
+
+                return (
+                  <motion.div
+                    key={event._id}
+                    variants={staggerItem}
+                    whileHover={{ y: -5 }}
+                    className="group bg-white rounded-3xl overflow-hidden shadow-elegant hover:shadow-elegant-lg transition-all duration-500 border border-cream-100"
+                  >
+                    {/* Image */}
+                    <div className="relative h-56 overflow-hidden bg-cream-100">
+                      {event.images?.[0] ? (
+                        <img src={event.images[0].url} alt={event.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-chocolate-300">
+                          <HiOutlineAcademicCap className="w-20 h-20" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-chocolate-900/80 via-chocolate-900/20 to-transparent" />
+
+                      {/* Status Badge */}
+                      <div className="absolute top-4 right-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${
+                            status.color === 'purple' ? 'bg-purple-600 text-white' :
+                            status.color === 'red' ? 'bg-red-500 text-white' :
+                            'bg-gray-500 text-white'
+                          }`}
+                        >
+                          {status.label}
+                        </span>
+                      </div>
+
+                      {/* ⭐ Multiple slots badge */}
+                      {hasMultipleSlots && (
+                        <div className="absolute top-4 left-4">
+                          <span className="bg-gold-500 text-chocolate-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+                            📅 {futureSlots.length} dates available
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Title overlay */}
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <h3 className="font-heading font-bold text-2xl text-white">{event.title}</h3>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6">
+                      {event.shortDescription && (
+                        <p className="text-chocolate-600 mb-4 line-clamp-2">{event.shortDescription}</p>
+                      )}
+
+                      {/* Slots Preview */}
+                      <div className="space-y-2 mb-4 text-sm">
+                        {hasMultipleSlots ? (
+                          <div>
+                            <div className="flex items-center gap-2 text-chocolate-700 mb-2">
+                              <HiOutlineCalendar className="w-5 h-5 text-purple-600" />
+                              <span className="font-semibold">Available Slots:</span>
+                            </div>
+                            <div className="grid grid-cols-1 gap-1.5 pl-7">
+                              {futureSlots.slice(0, 3).map((slot, idx) => {
+                                const slotSeatsLeft = slot.maxAttendees - (slot.bookingsCount || 0)
+                                return (
+                                  <div key={idx} className="flex items-center justify-between bg-cream-50 px-3 py-1.5 rounded-lg">
+                                    <span className="text-xs text-chocolate-700">
+                                      {formatDate(slot.date)} • {formatTime(slot.date)}
+                                    </span>
+                                    <span className={`text-xs font-semibold ${slotSeatsLeft <= 0 ? 'text-red-600' : slotSeatsLeft <= 5 ? 'text-orange-600' : 'text-green-600'}`}>
+                                      {slotSeatsLeft <= 0 ? 'Full' : `${slotSeatsLeft} left`}
+                                    </span>
+                                  </div>
+                                )
+                              })}
+                              {futureSlots.length > 3 && (
+                                <p className="text-xs text-purple-600 font-semibold pl-3">
+                                  + {futureSlots.length - 3} more slots
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-2 text-chocolate-600">
+                            <HiOutlineCalendar className="w-5 h-5 text-chocolate-900 flex-shrink-0 mt-0.5" />
+                            <span>
+                              {futureSlots[0] ? `${formatDate(futureSlots[0].date)} at ${formatTime(futureSlots[0].date)}` : 'TBA'}
+                            </span>
+                          </div>
+                        )}
+
+                        {event.venue && (
+                          <div className="flex items-start gap-2 text-chocolate-600">
+                            <HiOutlineLocationMarker className="w-5 h-5 text-chocolate-900 flex-shrink-0 mt-0.5" />
+                            <span>{event.venue}</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-start gap-2 text-chocolate-600">
+                          <HiOutlineUserGroup className="w-5 h-5 text-chocolate-900 flex-shrink-0 mt-0.5" />
+                          <span>
+                            {seatsInfo.available <= 0 ? (
+                              <span className="text-red-600 font-semibold">All slots sold out</span>
+                            ) : (
+                              <>
+                                <span className="text-red-900 font-semibold">{seatsInfo.available}</span> of {seatsInfo.total} total seats available
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Price + CTA */}
+                      <div className="flex items-center justify-between pt-4 border-t border-cream-100">
+                        <div>
+                          {event.price > 0 ? (
+                            <>
+                              <span className="text-2xl font-bold text-black">₹{event.price}</span>
+                              <span className="text-sm text-chocolate-500 ml-1">/ticket</span>
+                            </>
+                          ) : (
+                            <span className="text-gray-500 font-semibold">Free</span>
+                          )}
+                        </div>
+
+                        {status.canBook ? (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setSelectedEvent(event)}
+                            className="px-5 py-2.5 bg-amber-800 text-white rounded-full font-medium hover:bg-amber-900 transition-colors"
+                          >
+                            {hasMultipleSlots ? 'Choose Date' : 'Book Now'}
+                          </motion.button>
+                        ) : (
+                          <span className={`px-5 py-2.5 rounded-full font-medium text-sm ${
+                            status.color === 'red' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {status.label}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+          )}
+
+          {!loading && filtered.length === 0 && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
+              <div className="w-24 h-24 bg-cream-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <HiOutlineAcademicCap className="w-12 h-12 text-chocolate-300" />
+              </div>
+              <h3 className="text-2xl font-heading font-bold text-chocolate-900 mb-2">No workshops found</h3>
+              <p className="text-chocolate-500 mb-6">
+                {items.length === 0 ? 'No workshops scheduled yet. Check back soon!' : 'Try adjusting your search'}
+              </p>
+            </motion.div>
+          )}
         </div>
       </section>
+
+      {selectedEvent && (
+        <BookingModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onSuccess={handleBookingSuccess}
+        />
+      )}
     </motion.div>
   )
 }

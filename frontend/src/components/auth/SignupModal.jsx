@@ -94,33 +94,6 @@ const SignupModal = () => {
                 Create an account to start your sweet journey
               </p>
 
-              {/* Social Login */}
-              <div className="flex gap-4 mb-6">
-                <motion.button
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-cream-200 rounded-xl hover:border-cream-300 hover:bg-cream-50 transition-all"
-                >
-                  <FcGoogle className="w-5 h-5" />
-                  <span className="font-medium text-chocolate-700">Google</span>
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all"
-                >
-                  <FaFacebookF className="w-4 h-4" />
-                  <span className="font-medium">Facebook</span>
-                </motion.button>
-              </div>
-
-              {/* Divider */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex-1 h-px bg-cream-200" />
-                <span className="text-sm text-chocolate-400">or register with email</span>
-                <div className="flex-1 h-px bg-cream-200" />
-              </div>
-
               {/* Signup Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>

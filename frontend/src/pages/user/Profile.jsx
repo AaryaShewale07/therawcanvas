@@ -530,30 +530,6 @@ const Profile = () => {
                         </form>
                     </div>
                 </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8"
-                >
-                    {[
-                        { label: 'Orders', value: '12', icon: '📦' },
-                        { label: 'Wishlist', value: '8', icon: '❤️' },
-                        { label: 'Reviews', value: '5', icon: '⭐' },
-                        { label: 'Points', value: '450', icon: '🎁' },
-                    ].map((stat, index) => (
-                        <motion.div
-                            key={index}
-                            whileHover={{ y: -5 }}
-                            className="bg-white rounded-2xl shadow-elegant p-6 text-center"
-                        >
-                            <span className="text-3xl mb-2 block">{stat.icon}</span>
-                            <p className="text-2xl font-bold text-chocolate-900">{stat.value}</p>
-                            <p className="text-sm text-chocolate-500">{stat.label}</p>
-                        </motion.div>
-                    ))}
-                </motion.div>
             </div>
 
             {/* Image Upload Modal */}

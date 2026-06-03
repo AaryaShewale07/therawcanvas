@@ -1,9 +1,20 @@
+import { useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 const ProtectedRoute = ({ children }) => {
   const { user, isLoading, openLoginModal } = useAuth()
   const location = useLocation()
+
+  // FIXED: openLoginModal must be called inside useEffect, not during render.
+  // Calling setState (which openLoginModal does internally) while another
+  // component is rendering causes React's "setState during render" warning
+  // and can lead to inconsistent UI state.
+  useEffect(() => {
+    if (!isLoading && !user) {
+      openLoginModal()
+    }
+  }, [isLoading, user])
 
   if (isLoading) {
     return (
@@ -14,8 +25,6 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
-    // Open login modal and redirect to home
-    openLoginModal()
     return <Navigate to="/" state={{ from: location }} replace />
   }
 

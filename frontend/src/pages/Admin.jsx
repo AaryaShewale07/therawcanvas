@@ -3,6 +3,11 @@ import { motion } from 'framer-motion'
 import Dashboard from '../components/admin/Dashboard'
 import PostList from '../components/admin/PostList'
 import PostForm from '../components/admin/PostForm'
+import UsersPage from '../components/admin/UsersPage'
+import BookingsPage from '../components/admin/BookingsPage'
+import AnalyticsPage from '../components/admin/AnalyticsPage'
+import SettingsPage from '../components/admin/SettingsPage'
+import AdminOrders from '../components/admin/AdminOrders'  // ⭐ NEW IMPORT
 
 const Admin = ({ section = 'dashboard' }) => {
   const [showPostForm, setShowPostForm] = useState(false)
@@ -23,6 +28,10 @@ const Admin = ({ section = 'dashboard' }) => {
     setEditingPost(null)
   }
 
+  const handleSaved = () => {
+    if (window.__refreshPosts) window.__refreshPosts()
+  }
+
   const renderSection = () => {
     switch (section) {
       case 'posts':
@@ -31,16 +40,22 @@ const Admin = ({ section = 'dashboard' }) => {
       case 'gifting':
       case 'workshops':
         return (
-          <PostList 
-            category={section} 
+          <PostList
+            category={section}
             onAddPost={handleAddPost}
             onEditPost={handleEditPost}
           />
         )
+      case 'orders':  // ⭐ NEW CASE
+        return <AdminOrders />
       case 'users':
-        return <div className="text-chocolate-600">User management coming soon...</div>
+        return <UsersPage />
+      case 'bookings':
+        return <BookingsPage />
+      case 'analytics':
+        return <AnalyticsPage />
       case 'settings':
-        return <div className="text-chocolate-600">Settings coming soon...</div>
+        return <SettingsPage />
       default:
         return <Dashboard onAddPost={handleAddPost} />
     }
@@ -53,12 +68,15 @@ const Admin = ({ section = 'dashboard' }) => {
       transition={{ duration: 0.3 }}
     >
       {renderSection()}
-      
+
       {showPostForm && (
-        <PostForm 
-          post={editingPost} 
-          category={section !== 'dashboard' && section !== 'posts' ? section : null}
-          onClose={handleCloseForm} 
+        <PostForm
+          post={editingPost}
+          category={
+            section !== 'dashboard' && section !== 'posts' ? section : null
+          }
+          onClose={handleCloseForm}
+          onSaved={handleSaved}
         />
       )}
     </motion.div>

@@ -10,7 +10,7 @@ const seedAdmin = async () => {
     await connectDB()
 
     // Check if admin already exists
-    const adminExists = await User.findOne({ email: 'admin@artchocolates.com' })
+    const adminExists = await User.findOne({ email: 'therawcanvase@gmail.com' })
 
     if (adminExists) {
       console.log('═══════════════════════════════════════════')
@@ -31,9 +31,9 @@ const seedAdmin = async () => {
 
     // Create admin user
     const admin = await User.create({
-      name: 'Super Admin',
-      email: 'admin@artchocolates.com',
-      password: 'Admin@123',
+      name: 'Aarya Shewale',
+      email: 'therawcanvase@gmail.com',
+      password: 'RawAdmin@123',
       role: 'admin',
       isEmailVerified: true,
       isActive: true,
@@ -44,7 +44,7 @@ const seedAdmin = async () => {
     console.log('✅ Admin user created successfully!')
     console.log('═══════════════════════════════════════════')
     console.log(`📧 Email: ${admin.email}`)
-    console.log(`🔑 Password: Admin@123`)
+    console.log(`🔑 Password: RawAdmin@123`)
     console.log(`👤 Name: ${admin.name}`)
     console.log(`🎭 Role: ${admin.role}`)
     console.log('═══════════════════════════════════════════')

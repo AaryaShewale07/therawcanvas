@@ -1,4 +1,29 @@
+# Dependencies
 node_modules/
+*/node_modules/
+
+# Environment variables
 .env
-.DS_Store
+.env.local
+.env.production
+backend/.env
+frontend/.env
+
+# Build outputs
+dist/
+build/
+
+# Logs
 *.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Uploads
+uploads/
+
+# Test
+coverage/

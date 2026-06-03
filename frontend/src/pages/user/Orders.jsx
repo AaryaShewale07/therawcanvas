@@ -1,354 +1,226 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { 
-  HiOutlineShoppingBag, 
-  HiOutlineEye,
-  HiOutlineChevronDown,
-  HiOutlineChevronUp,
-  HiOutlineTruck,
-  HiOutlineCheck,
-  HiOutlineClock,
-  HiOutlineX
-} from 'react-icons/hi'
-import { pageTransition } from '../../utils/animations'
-
-// Mock orders data
-const ordersData = [
-  {
-    id: 'ORD-2024-001',
-    date: '2024-01-15',
-    status: 'delivered',
-    total: 189.99,
-    items: [
-      { 
-        name: 'Belgian Dark Truffle Collection', 
-        quantity: 2, 
-        price: 49.99, 
-        image: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=100'
-      },
-      { 
-        name: 'Abstract Sunset Dreams', 
-        quantity: 1, 
-        price: 90.01, 
-        image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=100'
-      },
-    ],
-    shippingAddress: '123 Main St, New York, NY 10001',
-    trackingNumber: 'TRK123456789',
-  },
-  {
-    id: 'ORD-2024-002',
-    date: '2024-01-20',
-    status: 'shipped',
-    total: 129.99,
-    items: [
-      { 
-        name: 'Romantic Indulgence Box', 
-        quantity: 1, 
-        price: 129.99, 
-        image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=100'
-      },
-    ],
-    shippingAddress: '456 Oak Ave, Los Angeles, CA 90001',
-    trackingNumber: 'TRK987654321',
-  },
-  {
-    id: 'ORD-2024-003',
-    date: '2024-01-22',
-    status: 'processing',
-    total: 75.00,
-    items: [
-      { 
-        name: 'Chocolate Truffle Masterclass', 
-        quantity: 1, 
-        price: 75.00, 
-        image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=100'
-      },
-    ],
-    shippingAddress: 'Workshop - Main Studio',
-    trackingNumber: null,
-  },
-  {
-    id: 'ORD-2024-004',
-    date: '2024-01-10',
-    status: 'cancelled',
-    total: 299.00,
-    items: [
-      { 
-        name: 'Ocean Whispers Canvas', 
-        quantity: 1, 
-        price: 299.00, 
-        image: 'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=100'
-      },
-    ],
-    shippingAddress: '789 Pine Rd, Chicago, IL 60601',
-    trackingNumber: null,
-  },
-]
-
-const statusConfig = {
-  delivered: {
-    label: 'Delivered',
-    color: 'bg-green-100 text-green-700',
-    icon: HiOutlineCheck,
-  },
-  shipped: {
-    label: 'Shipped',
-    color: 'bg-blue-100 text-blue-700',
-    icon: HiOutlineTruck,
-  },
-  processing: {
-    label: 'Processing',
-    color: 'bg-yellow-100 text-yellow-700',
-    icon: HiOutlineClock,
-  },
-  cancelled: {
-    label: 'Cancelled',
-    color: 'bg-red-100 text-red-700',
-    icon: HiOutlineX,
-  },
-}
+import { motion } from 'framer-motion'
+import { HiOutlineShoppingBag, HiOutlineChevronRight, HiOutlineXCircle } from 'react-icons/hi'
+import { FaWhatsapp } from 'react-icons/fa'
+import toast from 'react-hot-toast'
+import api from '../../utils/api'
 
 const Orders = () => {
-  const [expandedOrder, setExpandedOrder] = useState(null)
-  const [filterStatus, setFilterStatus] = useState('all')
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredOrders = filterStatus === 'all' 
-    ? ordersData 
-    : ordersData.filter(order => order.status === filterStatus)
-
-  const toggleOrder = (orderId) => {
-    setExpandedOrder(expandedOrder === orderId ? null : orderId)
+  const fetchOrders = async () => {
+    try {
+      const { data } = await api.get('/orders/my')
+      setOrders(data.orders || [])
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+  useEffect(() => {
+    fetchOrders()
+  }, [])
+
+  const handleCancel = async (orderId) => {
+    if (!window.confirm('Cancel this order?')) return
+    try {
+      await api.put(`/orders/${orderId}/cancel`)
+      toast.success('Order cancelled')
+      fetchOrders()
+    } catch (err) {
+      toast.error('Failed to cancel')
+    }
+  }
+
+  const handleSendPhotos = (order) => {
+    const orderId = order._id.slice(-8).toUpperCase()
+    const message = encodeURIComponent(
+      `Hello TheRawCanvasStudio! 👋
+
+I need to send photos for customization.
+
+📋 *Order Details:*
+• Order ID: *#${orderId}*
+• Name: ${order.shippingAddress?.name}
+• Amount: ₹${order.totalAmount}
+
+I'm ready to share my photos. 📸✨`
+    )
+    window.open(`https://wa.me/918291271695?text=${message}`, '_blank')
+  }
+
+  const statusColors = {
+    placed: 'bg-blue-100 text-blue-700',
+    confirmed: 'bg-purple-100 text-purple-700',
+    shipped: 'bg-indigo-100 text-indigo-700',
+    delivered: 'bg-green-100 text-green-700',
+    cancelled: 'bg-red-100 text-red-700',
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-24">
+        <div className="w-16 h-16 border-4 border-chocolate-200 border-t-chocolate-700 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
+        <div className="text-center">
+          <HiOutlineShoppingBag className="w-24 h-24 text-chocolate-300 mx-auto mb-4" />
+          <h2 className="text-3xl font-bold text-chocolate-900 mb-3">No orders yet</h2>
+          <p className="text-chocolate-600 mb-6">Start shopping to see your orders here!</p>
+          <Link
+            to="/art"
+            className="inline-block bg-chocolate-700 text-white px-8 py-3 rounded-full font-bold hover:bg-chocolate-800 transition"
+          >
+            Browse Products
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
     <motion.div
-      variants={pageTransition}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      className="pt-24 pb-16"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen pt-24 pb-16 bg-gradient-to-b from-cream-50 to-white"
     >
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-4xl font-heading font-bold text-chocolate-900 mb-2">
-            My Orders
-          </h1>
-          <p className="text-chocolate-600">
-            Track and manage your orders
-          </p>
-        </motion.div>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-4xl font-heading font-bold text-chocolate-900 mb-8">
+          My Orders ({orders.length})
+        </h1>
 
-        {/* Filter Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-wrap gap-2 mb-8"
-        >
-          {[
-            { key: 'all', label: 'All Orders' },
-            { key: 'processing', label: 'Processing' },
-            { key: 'shipped', label: 'Shipped' },
-            { key: 'delivered', label: 'Delivered' },
-            { key: 'cancelled', label: 'Cancelled' },
-          ].map((tab) => (
-            <motion.button
-              key={tab.key}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setFilterStatus(tab.key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                filterStatus === tab.key
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-cream-100 text-chocolate-700 hover:bg-cream-200'
-              }`}
+        <div className="space-y-4">
+          {orders.map((order, idx) => (
+            <motion.div
+              key={order._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              className="bg-white rounded-3xl shadow-elegant p-6 hover:shadow-elegant-lg transition"
             >
-              {tab.label}
-            </motion.button>
-          ))}
-        </motion.div>
+              {/* Header */}
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-cream-200">
+                <div>
+                  <p className="text-sm text-chocolate-500">Order ID</p>
+                  <p className="font-mono font-bold text-chocolate-900">
+                    #{order._id.slice(-8).toUpperCase()}
+                  </p>
+                </div>
 
-        {/* Orders List */}
-        {filteredOrders.length > 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-4"
-          >
-            {filteredOrders.map((order, index) => {
-              const StatusIcon = statusConfig[order.status].icon
-              return (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-white rounded-2xl shadow-elegant overflow-hidden"
-                >
-                  {/* Order Header */}
-                  <div
-                    onClick={() => toggleOrder(order.id)}
-                    className="p-6 cursor-pointer hover:bg-cream-50 transition-colors"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-cream-100 rounded-xl flex items-center justify-center">
-                          <HiOutlineShoppingBag className="w-6 h-6 text-chocolate-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-chocolate-900">{order.id}</p>
-                          <p className="text-sm text-chocolate-500">{formatDate(order.date)}</p>
-                        </div>
-                      </div>
+                <div>
+                  <p className="text-sm text-chocolate-500">Date</p>
+                  <p className="font-semibold text-chocolate-900">
+                    {new Date(order.createdAt).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </div>
 
-                      <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${statusConfig[order.status].color}`}>
-                          <StatusIcon className="w-4 h-4" />
-                          {statusConfig[order.status].label}
-                        </span>
-                        <span className="font-bold text-chocolate-900">
-                          ${order.total.toFixed(2)}
-                        </span>
-                        {expandedOrder === order.id ? (
-                          <HiOutlineChevronUp className="w-5 h-5 text-chocolate-500" />
-                        ) : (
-                          <HiOutlineChevronDown className="w-5 h-5 text-chocolate-500" />
-                        )}
-                      </div>
-                    </div>
+                <div>
+                  <p className="text-sm text-chocolate-500">Total</p>
+                  <p className="font-bold text-chocolate-900 text-lg">₹{order.totalAmount}</p>
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[order.orderStatus] || 'bg-gray-100 text-gray-700'}`}>
+                    {order.orderStatus?.toUpperCase()}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    order.paymentStatus === 'paid'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {order.paymentMethod}
+                  </span>
+                  {order.hasCustomization && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-gold-100 text-gold-700 flex items-center gap-1">
+                      🎨 CUSTOMIZE
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Customization Alert Banner */}
+              {order.hasCustomization && (
+                <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 rounded-r-xl flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 text-sm text-chocolate-700">
+                    <FaWhatsapp className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>
+                      <strong>Photos needed!</strong> Send your photos via WhatsApp with Order ID.
+                    </span>
                   </div>
+                  <button
+                    onClick={() => handleSendPhotos(order)}
+                    className="bg-green-500 hover:bg-green-600 text-white text-sm font-bold px-4 py-2 rounded-full transition flex items-center gap-2"
+                  >
+                    <FaWhatsapp className="w-4 h-4" /> Send Now
+                  </button>
+                </div>
+              )}
 
-                  {/* Order Details */}
-                  <AnimatePresence>
-                    {expandedOrder === order.id && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="border-t border-cream-200 overflow-hidden"
-                      >
-                        <div className="p-6 bg-cream-50">
-                          {/* Items */}
-                          <div className="mb-6">
-                            <h4 className="font-semibold text-chocolate-900 mb-4">Order Items</h4>
-                            <div className="space-y-3">
-                              {order.items.map((item, idx) => (
-                                <div key={idx} className="flex items-center gap-4 bg-white p-3 rounded-xl">
-                                  <img
-                                    src={item.image}
-                                    alt={item.name}
-                                    className="w-16 h-16 object-cover rounded-lg"
-                                  />
-                                  <div className="flex-1">
-                                    <p className="font-medium text-chocolate-900">{item.name}</p>
-                                    <p className="text-sm text-chocolate-500">Qty: {item.quantity}</p>
-                                  </div>
-                                  <p className="font-semibold text-chocolate-900">
-                                    ${(item.price * item.quantity).toFixed(2)}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
+              {/* Items */}
+              <div className="flex flex-wrap gap-3 mb-4">
+                {order.items.slice(0, 4).map((item, i) => (
+                  <img
+                    key={i}
+                    src={item.image}
+                    alt={item.title}
+                    className="w-16 h-16 rounded-xl object-cover border-2 border-cream-200"
+                  />
+                ))}
+                {order.items.length > 4 && (
+                  <div className="w-16 h-16 rounded-xl bg-cream-100 flex items-center justify-center font-bold text-chocolate-700">
+                    +{order.items.length - 4}
+                  </div>
+                )}
+              </div>
 
-                          {/* Shipping Info */}
-                          <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                            <div>
-                              <h4 className="font-semibold text-chocolate-900 mb-2">Shipping Address</h4>
-                              <p className="text-chocolate-600 text-sm">{order.shippingAddress}</p>
-                            </div>
-                            {order.trackingNumber && (
-                              <div>
-                                <h4 className="font-semibold text-chocolate-900 mb-2">Tracking Number</h4>
-                                <p className="text-primary-600 font-mono text-sm">{order.trackingNumber}</p>
-                              </div>
-                            )}
-                          </div>
+              <p className="text-chocolate-600 mb-4 text-sm">
+                {order.items.length} item{order.items.length !== 1 ? 's' : ''} •{' '}
+                {order.items.map((i) => i.title).join(', ').slice(0, 60)}...
+              </p>
 
-                          {/* Actions */}
-                          <div className="flex flex-wrap gap-3">
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-                            >
-                              <HiOutlineEye className="w-4 h-4" />
-                              View Details
-                            </motion.button>
-                            {order.status === 'shipped' && (
-                              <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="flex items-center gap-2 px-4 py-2 border border-chocolate-300 text-chocolate-700 rounded-lg text-sm font-medium hover:border-chocolate-400 transition-colors"
-                              >
-                                <HiOutlineTruck className="w-4 h-4" />
-                                Track Order
-                              </motion.button>
-                            )}
-                            {order.status === 'delivered' && (
-                              <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="flex items-center gap-2 px-4 py-2 border border-chocolate-300 text-chocolate-700 rounded-lg text-sm font-medium hover:border-chocolate-400 transition-colors"
-                              >
-                                Reorder
-                              </motion.button>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              )
-            })}
-          </motion.div>
-        ) : (
-          /* Empty State */
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-20"
-          >
-            <div className="w-32 h-32 bg-cream-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <HiOutlineShoppingBag className="w-16 h-16 text-cream-400" />
-            </div>
-            <h2 className="text-2xl font-heading font-bold text-chocolate-900 mb-4">
-              No orders found
-            </h2>
-            <p className="text-chocolate-500 mb-8 max-w-md mx-auto">
-              {filterStatus === 'all' 
-                ? "You haven't placed any orders yet. Start shopping to see your orders here."
-                : `No ${filterStatus} orders found.`
-              }
-            </p>
-            <Link to="/chocolates">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-primary"
-              >
-                Start Shopping
-              </motion.button>
-            </Link>
-          </motion.div>
-        )}
+              {/* Action Buttons — ALL inside the map */}
+              <div className="flex flex-wrap gap-4 items-center">
+                <Link
+                  to={`/order-success/${order._id}`}
+                  className="flex items-center gap-1 text-chocolate-700 hover:text-chocolate-900 font-semibold text-sm"
+                >
+                  View Details <HiOutlineChevronRight />
+                </Link>
+
+                {['placed', 'confirmed'].includes(order.orderStatus) && (
+                  <button
+                    onClick={() => handleCancel(order._id)}
+                    className="flex items-center gap-1 text-red-600 hover:text-red-800 font-semibold text-sm"
+                  >
+                    <HiOutlineXCircle className="w-4 h-4" /> Cancel Order
+                  </button>
+                )}
+
+                {order.hasCustomization && (
+                  <button
+                    onClick={() => handleSendPhotos(order)}
+                    className="flex items-center gap-1 text-green-600 hover:text-green-800 font-semibold text-sm"
+                  >
+                    <FaWhatsapp className="w-4 h-4" /> Send Photos
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </motion.div>
   )

@@ -1,53 +1,45 @@
 import express from 'express'
 import {
   register,
-  registerAdmin,
   login,
-  loginWithBackupCode,
   logout,
   getMe,
-  updateProfile,
   updatePassword,
-  uploadAvatar,
-  removeAvatar,
+  verifyBackupCode,
   forgotPassword,
   resetPassword,
+  updateProfile,
+  uploadAvatar,
+  deleteAvatar,
   getAllUsers,
-  getUserById,
   updateUserRole,
-  updateUserStatus,
-  getAdminStats,
-  deleteUser,
+  toggleUserStatus,
 } from '../controllers/authController.js'
+
 import { protect, admin } from '../middleware/authMiddleware.js'
 import upload from '../middleware/uploadMiddleware.js'
 
 const router = express.Router()
 
-// ============ PUBLIC ROUTES ============
+// PUBLIC
 router.post('/register', register)
 router.post('/login', login)
-router.post('/login-backup', loginWithBackupCode)
+router.post('/verify-backup', verifyBackupCode)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password', resetPassword)
 
-// ============ PROTECTED ROUTES ============
+// PROTECTED
 router.get('/me', protect, getMe)
 router.post('/logout', protect, logout)
-router.put('/profile', protect, updateProfile)
 router.put('/password', protect, updatePassword)
+router.put('/profile', protect, updateProfile)
 
-// ============ AVATAR ROUTES (CLOUDINARY) ============
+// AVATAR
 router.post('/avatar', protect, upload.single('avatar'), uploadAvatar)
-router.delete('/avatar', protect, removeAvatar)
+router.delete('/avatar', protect, deleteAvatar)
 
-// ============ ADMIN ROUTES ============
-router.post('/register-admin', protect, admin, registerAdmin)
 router.get('/users', protect, admin, getAllUsers)
-router.get('/users/:id', protect, admin, getUserById)
 router.put('/users/:id/role', protect, admin, updateUserRole)
-router.put('/users/:id/status', protect, admin, updateUserStatus)
-router.get('/admin/stats', protect, admin, getAdminStats)
-router.delete('/users/:id', protect, admin, deleteUser)
+router.put('/users/:id/status', protect, admin, toggleUserStatus)
 
 export default router

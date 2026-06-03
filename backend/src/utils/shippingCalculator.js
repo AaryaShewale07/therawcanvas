@@ -1,0 +1,48 @@
+export const SHIPPING_CONFIG = {
+  FREE_SHIPPING_THRESHOLD: 2000, // FREE above ₹2000
+  zones: {
+    mumbai: { name: 'Mumbai (Local)', cost: 150 },
+    maharashtra: { name: 'Maharashtra', cost: 200 },
+    india: { name: 'Rest of India', cost: 250 },
+    remote: { name: 'Remote Areas', cost: 350 },
+  },
+}
+
+export const getZoneFromPincode = (pincode) => {
+  if (!pincode || pincode.length !== 6) return null
+
+  const code = parseInt(pincode)
+  const prefix3 = pincode.substring(0, 3)
+
+  if (code >= 400000 && code <= 401999) return 'mumbai'
+  if (code >= 402000 && code <= 445999) return 'maharashtra'
+
+  const remotePrefixes = [
+    '190', '191', '192', '193', '194', // J&K
+    '737', // Sikkim
+    '744', // Andaman
+    '790', '791', '792', '793', '794', '795', '796', '797', '798', '799', // NE States
+  ]
+  if (remotePrefixes.includes(prefix3)) return 'remote'
+
+  if (code >= 100000 && code <= 999999) return 'india'
+  return null
+}
+
+export const calculateShipping = (pincode, subtotal) => {
+  const zone = getZoneFromPincode(pincode)
+
+  if (!zone) {
+    return { cost: 0, zone: null, isFree: false }
+  }
+
+  const zoneConfig = SHIPPING_CONFIG.zones[zone]
+
+  // FREE shipping above ₹2000
+  if (subtotal >= SHIPPING_CONFIG.FREE_SHIPPING_THRESHOLD) {
+    return { cost: 0, zone, isFree: true }
+  }
+
+  // Flat rate per zone
+  return { cost: zoneConfig.cost, zone, isFree: false }
+}

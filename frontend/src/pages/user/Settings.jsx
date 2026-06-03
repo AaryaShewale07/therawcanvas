@@ -32,14 +32,6 @@ const Settings = () => {
         currentPassword: '',
         newPassword: '',
     })
-
-    // Preferences
-    const [preferences, setPreferences] = useState({
-        language: 'en',
-        currency: 'USD',
-        darkMode: false,
-    })
-
     // 2FA
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
     const [backupCodes, setBackupCodes] = useState([])
@@ -55,7 +47,6 @@ const Settings = () => {
 
     const tabs = [
         { id: 'password', label: 'Password', icon: HiOutlineLockClosed },
-        { id: 'preferences', label: 'Preferences', icon: HiOutlineGlobe },
         { id: 'security', label: 'Security', icon: HiOutlineShieldCheck },
     ]
 
@@ -75,14 +66,7 @@ const Settings = () => {
                 },
             })
 
-            const data = await res.json()
-
-            if (res.ok) {
-                setPreferences(data.data.preferences)
-                setTwoFactorEnabled(data.data.twoFactorAuth.enabled)
-            } else {
-                toast.error(data.message || 'Failed to load settings')
-            }
+           
         } catch (error) {
             console.error('Error fetching settings:', error)
             toast.error('Failed to load settings')
@@ -157,39 +141,7 @@ const Settings = () => {
         }
     }
 
-    // ==================== PREFERENCES ====================
-    const handlePreferenceChange = async (key, value) => {
-        const updatedPreferences = {
-            ...preferences,
-            [key]: value,
-        }
-
-        setPreferences(updatedPreferences)
-
-        try {
-            const token = localStorage.getItem('token')
-
-            const res = await fetch('http://localhost:5000/api/settings/preferences', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(updatedPreferences),
-            })
-
-            const data = await res.json()
-
-            if (!res.ok) throw new Error(data.message)
-
-            toast.success('Preferences updated')
-        } catch (error) {
-            toast.error(error.message)
-            // Revert on error
-            setPreferences(preferences)
-        }
-    }
-
+  
     // ==================== TWO-FACTOR AUTH ====================
     const handleEnable2FA = async () => {
         setIsLoading(true)
@@ -366,7 +318,7 @@ const Settings = () => {
                         Settings
                     </h1>
                     <p className="text-chocolate-600">
-                        Manage your account settings and preferences
+                        Manage your account settings
                     </p>
                 </motion.div>
 
@@ -493,88 +445,6 @@ const Settings = () => {
                                             )}
                                         </motion.button>
                                     </form>
-                                </div>
-                            )}
-
-                            {/* Preferences Tab */}
-                            {activeTab === 'preferences' && (
-                                <div>
-                                    <h2 className="text-xl font-heading font-bold text-chocolate-900 mb-6">
-                                        Preferences
-                                    </h2>
-
-                                    <div className="space-y-6">
-                                        {/* Language */}
-                                        <div className="p-4 bg-cream-50 rounded-xl">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <HiOutlineGlobe className="w-6 h-6 text-chocolate-600" />
-                                                    <div>
-                                                        <p className="font-medium text-chocolate-900">Language</p>
-                                                        <p className="text-sm text-chocolate-500">Select your preferred language</p>
-                                                    </div>
-                                                </div>
-                                                <select
-                                                    value={preferences.language}
-                                                    onChange={(e) => handlePreferenceChange('language', e.target.value)}
-                                                    className="px-4 py-2 bg-white border border-cream-200 rounded-xl focus:outline-none focus:border-primary-500"
-                                                >
-                                                    <option value="en">English</option>
-                                                    <option value="hi">Hindi</option>
-                                                    <option value="bn">Bengali</option>
-                                                    <option value="ta">Tamil</option>
-                                                    <option value="te">Telugu</option>
-                                                    <option value="mr">Marathi</option>
-                                                    <option value="gu">Gujarati</option>
-                                                    <option value="kn">Kannada</option>
-                                                    <option value="ml">Malayalam</option>
-                                                    <option value="pa">Punjabi</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        {/* Currency */}
-                                        <div className="p-4 bg-cream-50 rounded-xl">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-2xl">💰</span>
-                                                    <div>
-                                                        <p className="font-medium text-chocolate-900">Currency</p>
-                                                        <p className="text-sm text-chocolate-500">Select your preferred currency</p>
-                                                    </div>
-                                                </div>
-                                                <select
-                                                    value="INR"
-                                                    disabled
-                                                    className="px-4 py-2 bg-white border border-cream-200 rounded-xl focus:outline-none appearance-none cursor-not-allowed"
-                                                >
-                                                    <option value="INR">INR (₹)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        {/* Dark Mode */}
-                                        <div className="p-4 bg-cream-50 rounded-xl">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <HiOutlineMoon className="w-6 h-6 text-chocolate-600" />
-                                                    <div>
-                                                        <p className="font-medium text-chocolate-900">Dark Mode</p>
-                                                        <p className="text-sm text-chocolate-500">Switch to dark theme</p>
-                                                    </div>
-                                                </div>
-                                                <label className="relative inline-flex items-center cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={preferences.darkMode}
-                                                        onChange={() => handlePreferenceChange('darkMode', !preferences.darkMode)}
-                                                        className="sr-only peer"
-                                                    />
-                                                    <div className="w-11 h-6 bg-cream-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             )}
 

@@ -4,9 +4,31 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  
+
   theme: {
+    // ⭐ Custom responsive breakpoints
+    screens: {
+      'xs': '475px',    // Small phones (iPhone SE, older Androids)
+      'sm': '640px',    // Standard phones (iPhone, most Androids)
+      'md': '768px',    // Tablets (iPad portrait)
+      'lg': '1024px',   // Laptops / iPad landscape
+      'xl': '1280px',   // Desktops
+      '2xl': '1536px',  // Large desktops
+      '3xl': '1920px',  // Ultra-wide screens
+    },
+
     extend: {
+      // ⭐ Container settings
+      container: {
+        center: true,
+        padding: {
+          DEFAULT: '1rem',
+          sm: '1.5rem',
+          lg: '2rem',
+          xl: '3rem',
+        },
+      },
+
       colors: {
         primary: {
           50: '#fdf8f6',
@@ -67,13 +89,39 @@ export default {
           700: '#334155',
           800: '#1e293b',
           900: '#0f172a',
-        }
+        },
       },
+
       fontFamily: {
         heading: ['Playfair Display', 'serif'],
         body: ['Poppins', 'sans-serif'],
         script: ['Dancing Script', 'cursive'],
       },
+
+      // ⭐ Responsive font sizes (better mobile reading)
+      fontSize: {
+        'xxs': ['0.625rem', { lineHeight: '0.875rem' }],
+      },
+
+      // ⭐ Custom spacing for safe areas (notched phones)
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
+      },
+
+      // ⭐ Min height utilities for mobile
+      minHeight: {
+        'screen-mobile': '100dvh', // Dynamic viewport height
+        'touch': '44px',           // Min touch target size
+      },
+
+      // ⭐ Min width for touch targets
+      minWidth: {
+        'touch': '44px',
+      },
+
       animation: {
         'float': 'float 6s ease-in-out infinite',
         'float-slow': 'float 8s ease-in-out infinite',
@@ -90,6 +138,7 @@ export default {
         'gradient': 'gradient 8s ease infinite',
         'shimmer': 'shimmer 2s linear infinite',
       },
+
       keyframes: {
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
@@ -132,6 +181,7 @@ export default {
           '100%': { backgroundPosition: '200% 0' },
         },
       },
+
       boxShadow: {
         'elegant': '0 4px 20px -2px rgba(0, 0, 0, 0.1)',
         'elegant-lg': '0 10px 40px -10px rgba(0, 0, 0, 0.15)',
@@ -142,5 +192,6 @@ export default {
       },
     },
   },
+
   plugins: [],
 }
