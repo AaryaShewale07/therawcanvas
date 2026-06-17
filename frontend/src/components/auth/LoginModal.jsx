@@ -20,7 +20,6 @@ const LoginModal = () => {
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
 
-  // View: 'password' | 'backup'
   const [view, setView] = useState('password')
   const [backupCode, setBackupCode] = useState('')
   const [backupAttempts, setBackupAttempts] = useState(0)
@@ -130,12 +129,14 @@ const LoginModal = () => {
               </motion.button>
             </div>
 
-            <div className="p-8 -mt-8">
-              {/* Avatar */}
-              <div className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-script bg-gradient-to-r from-primary-500 to-gold-500 bg-clip-text text-transparent">
-                  A&C
-                </span>
+            <div className="p-8 -mt-10">
+              {/* ✅ LOGO instead of A&C */}
+              <div className="w-20 h-20 items-center justify-center mx-auto mb-6 overflow-hidden border-4 border-white">
+                <img
+                  src="/logo.jpg"
+                  alt="TheRawCanvasStudio Logo"
+                  className="w-full h-full object-contain p-1"
+                />
               </div>
 
               <h2 className="text-2xl font-heading font-bold text-chocolate-900 text-center mb-2">
@@ -146,19 +147,19 @@ const LoginModal = () => {
               </p>
 
               <form onSubmit={handleLoginSubmit} className="space-y-5">
-                {/* Email — always visible */}
+                {/* ✅ Email — BIGGER */}
                 <div>
                   <label className="block text-sm font-medium text-chocolate-700 mb-2">
                     Email Address
                   </label>
                   <div className="relative">
-                    <HiOutlineMail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
+                    <HiOutlineMail className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-chocolate-400" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email"
-                      className="input-field pl-12"
+                      className="w-full pl-14 pr-4 py-4 text-base bg-cream-50 border-2 border-cream-200 rounded-xl text-chocolate-900 placeholder-chocolate-400 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all"
                       required
                     />
                   </div>
@@ -180,13 +181,13 @@ const LoginModal = () => {
                           Password
                         </label>
                         <div className="relative">
-                          <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
+                          <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-chocolate-400" />
                           <input
                             type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Enter your password"
-                            className="input-field pl-12 pr-12"
+                            className="w-full pl-14 pr-14 py-4 text-base bg-cream-50 border-2 border-cream-200 rounded-xl text-chocolate-900 placeholder-chocolate-400 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all"
                             required
                           />
                           <button
@@ -201,7 +202,6 @@ const LoginModal = () => {
                         </div>
                       </div>
 
-                      {/* Remember me + Enter backup code */}
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -256,13 +256,13 @@ const LoginModal = () => {
                           Backup Code
                         </label>
                         <div className="relative">
-                          <HiOutlineKey className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
+                          <HiOutlineKey className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-chocolate-400" />
                           <input
                             type="text"
                             value={backupCode}
                             onChange={(e) => setBackupCode(e.target.value.toUpperCase())}
                             placeholder="e.g. ABCD-EFGH-1234"
-                            className="input-field pl-12 font-mono tracking-widest uppercase disabled:bg-cream-100 disabled:cursor-not-allowed"
+                            className="w-full pl-14 pr-4 py-4 text-base bg-cream-50 border-2 border-cream-200 rounded-xl text-chocolate-900 placeholder-chocolate-400 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all font-mono tracking-widest uppercase disabled:bg-cream-100 disabled:cursor-not-allowed"
                             maxLength={20}
                             disabled={backupLocked}
                             onKeyDown={(e) => {
@@ -274,14 +274,12 @@ const LoginModal = () => {
                           />
                         </div>
 
-                        {/* Attempt counter */}
                         {backupAttempts > 0 && !backupLocked && (
                           <p className="text-xs text-amber-600 mt-1.5 font-medium">
                             {attemptsLeft} attempt{attemptsLeft !== 1 ? 's' : ''} remaining
                           </p>
                         )}
 
-                        {/* Locked message */}
                         {backupLocked && (
                           <p className="text-xs text-red-500 mt-1.5 font-medium">
                             Backup code entry locked. Please use Forgot Password.
@@ -289,7 +287,6 @@ const LoginModal = () => {
                         )}
                       </div>
 
-                      {/* Remember me + Forgot password — always shown in backup view */}
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -310,7 +307,6 @@ const LoginModal = () => {
                         </button>
                       </div>
 
-                      {/* Verify button */}
                       <motion.button
                         type="button"
                         whileHover={!backupLocked ? { scale: 1.02 } : {}}
@@ -330,7 +326,6 @@ const LoginModal = () => {
                         ) : 'Verify & Log In'}
                       </motion.button>
 
-                      {/* Back to password */}
                       <button
                         type="button"
                         onClick={() => setView('password')}

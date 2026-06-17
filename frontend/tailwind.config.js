@@ -6,19 +6,17 @@ export default {
   ],
 
   theme: {
-    // ⭐ Custom responsive breakpoints
     screens: {
-      'xs': '475px',    // Small phones (iPhone SE, older Androids)
-      'sm': '640px',    // Standard phones (iPhone, most Androids)
-      'md': '768px',    // Tablets (iPad portrait)
-      'lg': '1024px',   // Laptops / iPad landscape
-      'xl': '1280px',   // Desktops
-      '2xl': '1536px',  // Large desktops
-      '3xl': '1920px',  // Ultra-wide screens
+      'xs': '475px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+      '3xl': '1920px',
     },
 
     extend: {
-      // ⭐ Container settings
       container: {
         center: true,
         padding: {
@@ -92,18 +90,19 @@ export default {
         },
       },
 
+      // ⭐ ALL fonts now point to Poppins → ONE font everywhere
       fontFamily: {
-        heading: ['Playfair Display', 'serif'],
+        heading: ['Poppins', 'sans-serif'],
         body: ['Poppins', 'sans-serif'],
-        script: ['Dancing Script', 'cursive'],
+        script: ['Poppins', 'sans-serif'],
+        sans: ['Poppins', 'sans-serif'],
+        serif: ['Poppins', 'sans-serif'],
       },
 
-      // ⭐ Responsive font sizes (better mobile reading)
       fontSize: {
         'xxs': ['0.625rem', { lineHeight: '0.875rem' }],
       },
 
-      // ⭐ Custom spacing for safe areas (notched phones)
       spacing: {
         'safe-top': 'env(safe-area-inset-top)',
         'safe-bottom': 'env(safe-area-inset-bottom)',
@@ -111,13 +110,11 @@ export default {
         'safe-right': 'env(safe-area-inset-right)',
       },
 
-      // ⭐ Min height utilities for mobile
       minHeight: {
-        'screen-mobile': '100dvh', // Dynamic viewport height
-        'touch': '44px',           // Min touch target size
+        'screen-mobile': '100dvh',
+        'touch': '44px',
       },
 
-      // ⭐ Min width for touch targets
       minWidth: {
         'touch': '44px',
       },

@@ -46,6 +46,10 @@ import Shipping from './pages/Shipping'
 import Returns from './pages/Returns'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
+import CollectionPage from './pages/CollectionPage'
+import Gallery from './pages/Gallery'
+import GalleryAdmin from './pages/admin/GalleryAdmin'
+import BannerAdmin from './pages/admin/BannerAdmin'
 
 const AdminRoute = ({ children }) => {
   const { user, isAdmin, isLoading } = useAuth()
@@ -118,11 +122,14 @@ function App() {
               <Route path="chocolates" element={<Admin section="chocolates" />} />
               <Route path="gifting" element={<Admin section="gifting" />} />
               <Route path="workshops" element={<Admin section="workshops" />} />
-             <Route path="orders" element={<Admin section="orders" />} /> 
+              <Route path="orders" element={<Admin section="orders" />} />
               <Route path="users" element={<Admin section="users" />} />
               <Route path="settings" element={<Admin section="settings" />} />
               <Route path="analytics" element={<Admin section="analytics" />} />
               <Route path="bookings" element={<Admin section="bookings" />} />
+              <Route path="gallery" element={<GalleryAdmin />} />
+              {/* ⭐ MOVED HERE — this is where banner route belongs */}
+              <Route path="banners" element={<BannerAdmin />} />
             </Route>
           </Routes>
         ) : (
@@ -136,19 +143,21 @@ function App() {
               <Route path="gifting" element={<Gifting />} />
               <Route path="workshops" element={<Workshops />} />
 
-              {/* ⭐ Product Detail (preview eye button) */}
+              {/* Product Detail */}
               <Route path="product/:id" element={<ProductDetail />} />
 
-              {/* Cart (public — login enforced inside Cart context) */}
+              {/* Cart */}
               <Route path="cart" element={<Cart />} />
 
-              {/* Protected routes (need login) */}
+              {/* Protected routes */}
               <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
               <Route path="order-success/:id" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
               <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
               <Route path="orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+              {/* Info pages */}
               <Route path="about" element={<About />} />
               <Route path="story" element={<OurStory />} />
               <Route path="blog" element={<Blog />} />
@@ -159,7 +168,10 @@ function App() {
               <Route path="returns" element={<Returns />} />
               <Route path="privacy" element={<Privacy />} />
               <Route path="terms" element={<Terms />} />
-            
+
+              {/* Collection + Gallery */}
+              <Route path="collection" element={<CollectionPage />} />
+              <Route path="gallery" element={<Gallery />} />
 
               {/* Reset password */}
               <Route path="reset-password" element={<ResetPasswordPage />} />

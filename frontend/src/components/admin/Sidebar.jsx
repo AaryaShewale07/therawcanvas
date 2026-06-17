@@ -12,7 +12,9 @@ import {
   HiOutlineDocumentText,
   HiOutlineChartBar,
   HiOutlineTicket,
-  HiOutlineShoppingBag,  // ⭐ MISSING IMPORT — NOW FIXED
+  HiOutlineShoppingBag,
+  HiOutlineCamera,
+  HiOutlineSpeakerphone, // ⭐ NEW — for Promo Banners
 } from 'react-icons/hi'
 import { useAuth } from '../../context/AuthContext'
 
@@ -22,32 +24,34 @@ const menuItems = [
     items: [
       { name: 'Dashboard', icon: HiOutlineHome, path: '/admin' },
       { name: 'Analytics', icon: HiOutlineChartBar, path: '/admin/analytics' },
-    ]
+    ],
   },
   {
-    title: 'Orders',  // ⭐ NEW SECTION (better organization)
+    title: 'Orders',
     items: [
       { name: 'All Orders', icon: HiOutlineShoppingBag, path: '/admin/orders' },
       { name: 'Bookings', icon: HiOutlineTicket, path: '/admin/bookings' },
-    ]
+    ],
   },
   {
     title: 'Content',
     items: [
       { name: 'All Posts', icon: HiOutlineDocumentText, path: '/admin/posts' },
+      { name: 'Promo Banners', icon: HiOutlineSpeakerphone, path: '/admin/banners' }, // ⭐ NEW
       { name: 'Art', icon: HiOutlinePhotograph, path: '/admin/art' },
       { name: 'Chocolates', icon: HiOutlineCake, path: '/admin/chocolates' },
       { name: 'Gifting', icon: HiOutlineGift, path: '/admin/gifting' },
       { name: 'Workshops', icon: HiOutlineAcademicCap, path: '/admin/workshops' },
-    ]
+      { name: 'Gallery', icon: HiOutlineCamera, path: '/admin/gallery' },
+    ],
   },
   {
     title: 'Management',
     items: [
       { name: 'Users', icon: HiOutlineUsers, path: '/admin/users' },
       { name: 'Settings', icon: HiOutlineCog, path: '/admin/settings' },
-    ]
-  }
+    ],
+  },
 ]
 
 const Sidebar = () => {
@@ -64,8 +68,12 @@ const Sidebar = () => {
       {/* Logo */}
       <div className="p-6 border-b border-chocolate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-gold-500 rounded-xl flex items-center justify-center">
-            <span className="text-white font-script text-lg">A&C</span>
+          <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg">
+            <img
+              src="/logo.jpg"
+              alt="The Raw Canvas Studio"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <h1 className="font-heading font-bold text-lg text-white">Admin Panel</h1>
@@ -89,9 +97,10 @@ const Sidebar = () => {
                     end={item.path === '/admin'}
                     className={({ isActive }) => `
                       flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all
-                      ${isActive
-                        ? 'bg-primary-500/20 text-primary-400 border-r-4 border-primary-500'
-                        : 'text-cream-300 hover:bg-chocolate-800 hover:text-white'
+                      ${
+                        isActive
+                          ? 'bg-primary-500/20 text-primary-400 border-r-4 border-primary-500'
+                          : 'text-cream-300 hover:bg-chocolate-800 hover:text-white'
                       }
                     `}
                   >

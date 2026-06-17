@@ -18,7 +18,15 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, 'Password is required'],
-      minlength: 6,
+      minlength: [8, 'Password must be at least 8 characters'],
+      validate: {
+        validator: function (v) {
+          // Only validate on NEW/modified passwords, not on already-hashed ones
+          if (!this.isModified('password')) return true
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v)
+        },
+        message: 'Password must contain uppercase, lowercase, number, and special character (@$!%*?&)',
+      },
       select: false,
     },
     avatar: {
@@ -77,22 +85,7 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    // Add to user schema
-    password: {
-      type: String,
-      required: true,
-      minlength: [8, 'Password must be at least 8 characters'],
-      validate: {
-        validator: function (v) {
-          // At least one uppercase, lowercase, number, special char
-          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v)
-        },
-        message: 'Password must contain uppercase, lowercase, number, and special character (@$!%*?&)',
-      },
-      select: false,
-    }
   },
-
   {
     timestamps: true,
   }

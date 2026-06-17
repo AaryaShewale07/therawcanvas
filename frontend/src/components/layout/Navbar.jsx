@@ -20,6 +20,7 @@ const navLinks = [
   { name: 'Chocolates', path: '/chocolates' },
   { name: 'Gifting', path: '/gifting' },
   { name: 'Workshops', path: '/workshops' },
+  { name: 'Gallery', path: '/gallery' },
 ]
 
 

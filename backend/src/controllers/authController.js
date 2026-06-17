@@ -28,11 +28,14 @@ export const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body
 
   const exists = await User.findOne({ email })
-  if (exists) throw new Error('User already exists')
+  if (exists) {
+    res.status(400)
+    throw new Error('User already exists')
+  }
 
   const user = await User.create({ name, email, password })
 
-  // ⭐ Send welcome email (don't block registration if it fails)
+  // Send welcome email (don't block registration if it fails)
   try {
     await sendEmail({
       to: user.email,
@@ -68,7 +71,9 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = generateToken(user._id, rememberMe)
 
-  await user.save()
+  // Update last login without triggering validators
+  user.lastLogin = new Date()
+  await user.save({ validateBeforeSave: false })
 
   res.json({
     success: true,
@@ -81,7 +86,10 @@ export const verifyBackupCode = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email }).select('+twoFactorAuth.backupCodes')
 
-  if (!user) throw new Error('User not found')
+  if (!user) {
+    res.status(404)
+    throw new Error('User not found')
+  }
 
   const clean = code.trim().toUpperCase().replace(/[-\s]/g, '')
 
@@ -89,7 +97,10 @@ export const verifyBackupCode = asyncHandler(async (req, res) => {
     (c) => c.replace(/[-\s]/g, '') === clean
   )
 
-  if (!valid) throw new Error('Invalid backup code')
+  if (!valid) {
+    res.status(401)
+    throw new Error('Invalid backup code')
+  }
 
   const token = generateToken(user._id, false)
 
@@ -123,7 +134,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   user.passwordResetToken = hashedToken
   user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000)
-  await user.save()
+  await user.save({ validateBeforeSave: false })
 
   const resetURL = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`
 
@@ -164,6 +175,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   const { token, email, newPassword } = req.body
 
   if (!token || !email || !newPassword) {
+    res.status(400)
     throw new Error('Token, email and new password are required')
   }
 
@@ -175,7 +187,10 @@ export const resetPassword = asyncHandler(async (req, res) => {
     passwordResetExpires: { $gt: new Date() },
   })
 
-  if (!user) throw new Error('Reset link is invalid or has expired')
+  if (!user) {
+    res.status(400)
+    throw new Error('Reset link is invalid or has expired')
+  }
 
   user.password = newPassword
   user.passwordResetToken = null
@@ -189,7 +204,10 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
 export const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id)
-  if (!user) throw new Error('User not found')
+  if (!user) {
+    res.status(404)
+    throw new Error('User not found')
+  }
 
   res.json({ success: true, data: { user: sanitizeUser(user) } })
 })
@@ -200,7 +218,10 @@ export const updatePassword = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select('+password')
 
   const isMatch = await user.comparePassword(currentPassword)
-  if (!isMatch) throw new Error('Wrong password')
+  if (!isMatch) {
+    res.status(401)
+    throw new Error('Wrong password')
+  }
 
   user.password = newPassword
   await user.save()
@@ -228,7 +249,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
     }
   }
 
-  const updatedUser = await user.save()
+  const updatedUser = await user.save({ validateBeforeSave: false })
 
   res.json({
     success: true,
@@ -273,7 +294,7 @@ export const uploadAvatar = asyncHandler(async (req, res) => {
 
   user.avatar = result.secure_url
   user.avatarPublicId = result.public_id
-  await user.save()
+  await user.save({ validateBeforeSave: false })
 
   res.json({
     success: true,
@@ -298,7 +319,7 @@ export const deleteAvatar = asyncHandler(async (req, res) => {
 
   user.avatar = null
   user.avatarPublicId = null
-  await user.save()
+  await user.save({ validateBeforeSave: false })
 
   res.json({
     success: true,
@@ -315,22 +336,30 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 
 export const updateUserRole = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id)
-  if (!user) { res.status(404); throw new Error('User not found') }
+  if (!user) {
+    res.status(404)
+    throw new Error('User not found')
+  }
   if (user._id.toString() === req.user._id.toString()) {
-    res.status(400); throw new Error('Cannot change your own role')
+    res.status(400)
+    throw new Error('Cannot change your own role')
   }
   user.role = user.role === 'admin' ? 'user' : 'admin'
-  await user.save()
+  await user.save({ validateBeforeSave: false })
   res.json({ success: true, data: sanitizeUser(user) })
 })
 
 export const toggleUserStatus = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id)
-  if (!user) { res.status(404); throw new Error('User not found') }
+  if (!user) {
+    res.status(404)
+    throw new Error('User not found')
+  }
   if (user._id.toString() === req.user._id.toString()) {
-    res.status(400); throw new Error('Cannot deactivate your own account')
+    res.status(400)
+    throw new Error('Cannot deactivate your own account')
   }
   user.isActive = !user.isActive
-  await user.save()
+  await user.save({ validateBeforeSave: false })
   res.json({ success: true, data: sanitizeUser(user) })
 })

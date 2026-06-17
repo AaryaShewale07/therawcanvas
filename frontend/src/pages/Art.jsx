@@ -1,3 +1,4 @@
+// src/pages/Art.jsx
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
@@ -10,6 +11,7 @@ import {
   HiOutlineSearch,
   HiHeart,
 } from 'react-icons/hi'
+import { HiOutlineBolt } from 'react-icons/hi2'
 import api from '../utils/api'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
@@ -26,7 +28,6 @@ const Art = () => {
   const { user, openLoginModal } = useAuth()
   const navigate = useNavigate()
 
-  // Fetch art posts from backend
   useEffect(() => {
     const fetchArt = async () => {
       try {
@@ -41,36 +42,27 @@ const Art = () => {
     fetchArt()
   }, [])
 
-  // Build categories from data
   const categories = ['All', ...new Set(artworks.map((a) => a.subCategory).filter(Boolean))]
 
   const filteredArtworks = artworks.filter((art) => {
-    const matchesCategory =
-      selectedCategory === 'All' || art.subCategory === selectedCategory
+    const matchesCategory = selectedCategory === 'All' || art.subCategory === selectedCategory
     const matchesSearch =
       art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (art.artist || '').toLowerCase().includes(searchQuery.toLowerCase())
     return matchesCategory && matchesSearch
   })
 
-  // ===== Card Action Handlers =====
   const handleWishlistClick = (e, productId) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!user) {
-      openLoginModal()
-      return
-    }
+    if (!user) { openLoginModal(); return }
     toggleWishlist(productId)
   }
 
   const handleAddToCart = (e, productId) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!user) {
-      openLoginModal()
-      return
-    }
+    if (!user) { openLoginModal(); return }
     addToCart(productId, 1)
   }
 
@@ -78,6 +70,25 @@ const Art = () => {
     e.preventDefault()
     e.stopPropagation()
     navigate(`/product/${productId}`)
+  }
+
+  /* ── Buy Now: go to checkout with product as state (NO cart add) ── */
+  const handleBuyNow = (e, product) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!user) { openLoginModal(); return }
+    navigate('/checkout', {
+      state: {
+        buyNow: true,
+        product: {
+          _id: product._id,
+          title: product.title,
+          price: product.price,
+          image: product.images?.[0]?.url || null,
+          quantity: 1,
+        },
+      },
+    })
   }
 
   return (
@@ -102,7 +113,6 @@ const Art = () => {
             <p className="text-lg text-chocolate-600 mb-8">
               Discover unique artworks. Each piece tells a story and brings beauty to your space.
             </p>
-
             <div className="relative max-w-md mx-auto">
               <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
               <input
@@ -119,7 +129,7 @@ const Art = () => {
 
       <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Categories */}
+
           {categories.length > 1 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -152,17 +162,16 @@ const Art = () => {
           )}
 
           <p className="text-chocolate-500 mb-6">
-            Showing {filteredArtworks.length} {filteredArtworks.length === 1 ? 'artwork' : 'artworks'}
+            Showing {filteredArtworks.length}{' '}
+            {filteredArtworks.length === 1 ? 'artwork' : 'artworks'}
           </p>
 
-          {/* Loading */}
           {loading && (
             <div className="text-center py-20">
               <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto" />
             </div>
           )}
 
-          {/* Grid */}
           {!loading && (
             <motion.div
               variants={staggerContainer}
@@ -196,7 +205,6 @@ const Art = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-chocolate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                          {/* Wishlist */}
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
@@ -214,7 +222,6 @@ const Art = () => {
                             )}
                           </motion.button>
 
-                          {/* View */}
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
@@ -224,7 +231,6 @@ const Art = () => {
                             <HiOutlineEye className="w-6 h-6 text-chocolate-700" />
                           </motion.button>
 
-                          {/* Add to Cart */}
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
@@ -237,10 +243,14 @@ const Art = () => {
 
                         <div className="absolute top-4 left-4 flex flex-col gap-2">
                           {art.isNew && (
-                            <span className="px-3 py-1 bg-gold-500 text-chocolate-900 text-xs font-bold rounded-full">NEW</span>
+                            <span className="px-3 py-1 bg-gold-500 text-chocolate-900 text-xs font-bold rounded-full">
+                              NEW
+                            </span>
                           )}
                           {art.originalPrice && (
-                            <span className="px-3 py-1 bg-primary-500 text-white text-xs font-bold rounded-full">SALE</span>
+                            <span className="px-3 py-1 bg-primary-500 text-white text-xs font-bold rounded-full">
+                              SALE
+                            </span>
                           )}
                         </div>
 
@@ -256,22 +266,54 @@ const Art = () => {
                           {art.title}
                         </h3>
                         {art.artist && (
-                          <p className="text-chocolate-500 text-sm mb-4">by {art.artist}</p>
+                          <p className="text-chocolate-500 text-sm mb-3">by {art.artist}</p>
+                        )}
+                        {art.shortDescription && (
+                          <p className="text-chocolate-400 text-sm mb-4 line-clamp-2">
+                            {art.shortDescription}
+                          </p>
                         )}
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
                             {art.price > 0 && (
-                              <span className="text-xl font-bold text-primary-600">₹{art.price}</span>
+                              <span className="text-xl font-bold text-primary-600">
+                                ₹{art.price}
+                              </span>
                             )}
                             {art.originalPrice && (
-                              <span className="text-sm text-chocolate-400 line-through">₹{art.originalPrice}</span>
+                              <span className="text-sm text-chocolate-400 line-through">
+                                ₹{art.originalPrice}
+                              </span>
                             )}
                           </div>
                           <div className="flex items-center gap-1 text-chocolate-400">
                             <HiOutlineHeart className="w-4 h-4" />
                             <span className="text-sm">{art.likes || 0}</span>
                           </div>
+                        </div>
+
+                        {/* ── Action buttons ── */}
+                        <div className="flex gap-2 pt-4 border-t border-cream-100">
+                          <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={(e) => handleAddToCart(e, art._id)}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full border-2 border-primary-500 text-primary-600 font-semibold text-sm hover:bg-primary-50 transition-colors"
+                          >
+                            <HiOutlineShoppingBag className="w-4 h-4" />
+                            Add to Cart
+                          </motion.button>
+
+                          <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={(e) => handleBuyNow(e, art)}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full bg-primary-500 text-white font-semibold text-sm hover:bg-primary-600 transition-colors shadow-md"
+                          >
+                            <HiOutlineBolt className="w-4 h-4" />
+                            Buy Now
+                          </motion.button>
                         </div>
                       </div>
                     </Link>
@@ -281,7 +323,6 @@ const Art = () => {
             </motion.div>
           )}
 
-          {/* Empty */}
           {!loading && filteredArtworks.length === 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}

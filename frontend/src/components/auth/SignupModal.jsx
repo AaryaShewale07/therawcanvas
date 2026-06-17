@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HiX, HiOutlineMail, HiOutlineLockClosed, HiOutlineUser, HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi'
-import { FcGoogle } from 'react-icons/fc'
-import { FaFacebookF } from 'react-icons/fa'
 import { useAuth } from '../../context/AuthContext'
 import { modalVariants, backdropVariants } from '../../utils/animations'
 import toast from 'react-hot-toast'
@@ -79,12 +77,14 @@ const SignupModal = () => {
               </motion.button>
             </div>
 
-            <div className="p-8 -mt-8">
-              {/* Avatar Circle */}
-              <div className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-script bg-gradient-to-r from-gold-500 to-primary-500 bg-clip-text text-transparent">
-                  A&C
-                </span>
+            <div className="p-8 -mt-10">
+              {/* ✅ LOGO instead of A&C */}
+              <div className="w-20 h-20 items-center justify-center mx-auto mb-6 overflow-hidden border-4 border-white">
+                <img
+                  src="/logo.jpg"
+                  alt="TheRawCanvasStudio Logo"
+                  className="w-full h-full object-contain p-1"
+                />
               </div>
 
               <h2 className="text-2xl font-heading font-bold text-chocolate-900 text-center mb-2">
@@ -94,39 +94,39 @@ const SignupModal = () => {
                 Create an account to start your sweet journey
               </p>
 
-              {/* Signup Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-chocolate-700 mb-2">
                     Full Name
                   </label>
                   <div className="relative">
-                    <HiOutlineUser className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
+                    <HiOutlineUser className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-chocolate-400" />
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="Enter your name"
-                      className="input-field pl-12"
+                      className="w-full pl-14 pr-4 py-4 text-base bg-cream-50 border-2 border-cream-200 rounded-xl text-chocolate-900 placeholder-chocolate-400 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all"
                       required
                     />
                   </div>
                 </div>
 
+                {/* ✅ Email — BIGGER */}
                 <div>
                   <label className="block text-sm font-medium text-chocolate-700 mb-2">
                     Email Address
                   </label>
                   <div className="relative">
-                    <HiOutlineMail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
+                    <HiOutlineMail className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-chocolate-400" />
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="Enter your email"
-                      className="input-field pl-12"
+                      className="w-full pl-14 pr-4 py-4 text-base bg-cream-50 border-2 border-cream-200 rounded-xl text-chocolate-900 placeholder-chocolate-400 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all"
                       required
                     />
                   </div>
@@ -137,14 +137,14 @@ const SignupModal = () => {
                     Password
                   </label>
                   <div className="relative">
-                    <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
+                    <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-chocolate-400" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="Create a password"
-                      className="input-field pl-12 pr-12"
+                      className="w-full pl-14 pr-14 py-4 text-base bg-cream-50 border-2 border-cream-200 rounded-xl text-chocolate-900 placeholder-chocolate-400 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all"
                       required
                     />
                     <button
@@ -166,14 +166,14 @@ const SignupModal = () => {
                     Confirm Password
                   </label>
                   <div className="relative">
-                    <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
+                    <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-chocolate-400" />
                     <input
                       type="password"
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       placeholder="Confirm your password"
-                      className="input-field pl-12"
+                      className="w-full pl-14 pr-4 py-4 text-base bg-cream-50 border-2 border-cream-200 rounded-xl text-chocolate-900 placeholder-chocolate-400 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all"
                       required
                     />
                   </div>
@@ -189,9 +189,9 @@ const SignupModal = () => {
                   />
                   <span className="text-sm text-chocolate-600">
                     I agree to the{' '}
-                    <a href="#" className="text-primary-600 hover:underline">Terms of Service</a>
+                    <a href="/Terms" className="text-primary-600 hover:underline">Terms of Service</a>
                     {' '}and{' '}
-                    <a href="#" className="text-primary-600 hover:underline">Privacy Policy</a>
+                    <a href="/Privacy" className="text-primary-600 hover:underline">Privacy Policy</a>
                   </span>
                 </label>
 

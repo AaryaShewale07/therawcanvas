@@ -2,7 +2,28 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const AuthContext = createContext()
 
-// ⭐ This export MUST exist
+// ============ API HELPER ============
+const API_URL = 'http://localhost:5000/api'
+
+const apiFetch = async (endpoint, options = {}) => {
+  const token = localStorage.getItem('token')
+
+  const config = {
+    credentials: 'include', // 👈 Required for CORS with credentials: true
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+    ...options,
+  }
+
+  const response = await fetch(`${API_URL}${endpoint}`, config)
+  return response
+}
+
+// ============ HOOK ============
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
@@ -11,18 +32,17 @@ export const useAuth = () => {
   return context
 }
 
+// ============ PROVIDER ============
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
 
-  // Fetch full user data
+  // Fetch full user profile
   const fetchUserProfile = async (token) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await apiFetch('/auth/me')
       const data = await res.json()
 
       if (res.ok) {
@@ -43,12 +63,12 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Initialize auth on mount
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('token')
       const savedUser = localStorage.getItem('user')
 
-      // Use cached user immediately
       if (savedUser && savedUser !== 'undefined') {
         try {
           setUser(JSON.parse(savedUser))
@@ -70,12 +90,12 @@ export const AuthProvider = ({ children }) => {
     initializeAuth()
   }, [])
 
+  // ✅ Login
   const login = async (email, password) => {
     setIsLoading(true)
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await apiFetch('/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
 
@@ -87,12 +107,10 @@ export const AuthProvider = ({ children }) => {
       const token = data.data?.token
       const userData = data.data?.user
 
-      if (!token) {
-        throw new Error('Server did not return a token!')
-      }
+      if (!token) throw new Error('Server did not return a token!')
 
       localStorage.setItem('token', token)
-      console.log('✅ Token saved:', localStorage.getItem('token')?.substring(0, 30))
+      console.log('✅ Token saved:', token.substring(0, 30))
 
       if (userData) {
         setUser(userData)
@@ -102,19 +120,19 @@ export const AuthProvider = ({ children }) => {
       setIsLoginModalOpen(false)
       return { success: true }
     } catch (error) {
-      console.error('Login error:', error)
+      console.error('Login error:', error.message)
       return { success: false, error: error.message }
     } finally {
       setIsLoading(false)
     }
   }
 
+  // ✅ Signup
   const signup = async (name, email, password) => {
     setIsLoading(true)
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await apiFetch('/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       })
 
@@ -126,9 +144,7 @@ export const AuthProvider = ({ children }) => {
       const token = data.data?.token
       const userData = data.data?.user
 
-      if (!token) {
-        throw new Error('Server did not return a token!')
-      }
+      if (!token) throw new Error('Server did not return a token!')
 
       localStorage.setItem('token', token)
 
@@ -140,17 +156,18 @@ export const AuthProvider = ({ children }) => {
       setIsSignupModalOpen(false)
       return { success: true }
     } catch (error) {
+      console.error('Signup error:', error.message)
       return { success: false, error: error.message }
     } finally {
       setIsLoading(false)
     }
   }
 
+  // ✅ Verify Backup Code
   const verifyBackupCode = async (email, code) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/verify-backup', {
+      const res = await apiFetch('/auth/verify-backup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code }),
       })
       const data = await res.json()
@@ -172,11 +189,11 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // ✅ Forgot Password
   const forgotPassword = async (email) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+      const res = await apiFetch('/auth/forgot-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
       const data = await res.json()
@@ -187,17 +204,20 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // ✅ Logout
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
     localStorage.removeItem('token')
   }
 
+  // ✅ Refresh User
   const refreshUser = async () => {
     const token = localStorage.getItem('token')
     if (token) await fetchUserProfile(token)
   }
 
+  // ✅ Modal Controls
   const openLoginModal = () => {
     setIsSignupModalOpen(false)
     setIsLoginModalOpen(true)

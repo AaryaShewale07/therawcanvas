@@ -220,6 +220,43 @@ const Shipping = () => {
           </ul>
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="bg-white rounded-3xl p-8 shadow-elegant mb-8"
+        >
+          <h2 className="text-2xl font-bold text-chocolate-900 mb-4">
+            Shipping & Logistics Support
+          </h2>
+
+          <div className="space-y-4 text-chocolate-700">
+            <p>
+              <strong>Delayed Deliveries:</strong> Delivery timelines may occasionally
+              be affected by production schedules, weather conditions, courier delays,
+              customs clearance, or unforeseen circumstances.
+            </p>
+
+            <p>
+              <strong>Lost Shipments:</strong> If a shipment is confirmed lost in
+              transit, we will coordinate with the courier partner and arrange a
+              replacement or store credit where applicable.
+            </p>
+
+            <p>
+              <strong>Incorrect Address:</strong> Customers are responsible for
+              providing accurate shipping details. We cannot be held responsible for
+              failed deliveries due to incorrect or incomplete addresses.
+            </p>
+
+            <p>
+              <strong>Order Updates:</strong> For handcrafted orders with longer
+              preparation timelines, we may share progress updates and photographs of
+              the artwork before dispatch.
+            </p>
+          </div>
+        </motion.div>
+
         {/* Contact Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

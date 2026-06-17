@@ -88,8 +88,9 @@ const Returns = () => {
             <ul className="space-y-2 text-chocolate-700">
               <li className="flex gap-2"><span className="text-red-500">✗</span> Requests without unboxing video</li>
               <li className="flex gap-2"><span className="text-red-500">✗</span> Customized & personalized items</li>
+              <li className="flex gap-2"><span className="text-red-500">✗</span> Minor variations in color, design, or finish due to the handmade process</li>
               <li className="flex gap-2"><span className="text-red-500">✗</span> Consumed chocolates</li>
-              <li className="flex gap-2"><span className="text-red-500">✗</span> Items returned after 24 hours of delivery</li>
+              <li className="flex gap-2"><span className="text-red-500">✗</span> Items reported after 48 hours of delivery</li>
               <li className="flex gap-2"><span className="text-red-500">✗</span> Change of mind</li>
               <li className="flex gap-2"><span className="text-red-500">✗</span> Workshop bookings (cancellation 48hr prior only)</li>
             </ul>
@@ -125,12 +126,81 @@ const Returns = () => {
         >
           <h2 className="text-2xl font-bold text-chocolate-900 mb-4">📋 How to Request a Refund</h2>
           <ol className="space-y-3 text-chocolate-700">
-            <li className="flex gap-3"><span className="font-bold text-gold-600">1.</span> Contact us within 24 hours of delivery with your Order ID</li>
-            <li className="flex gap-3"><span className="font-bold text-gold-600">2.</span> Send your <strong>unboxing video</strong> via WhatsApp clearly showing the issue</li>
-            <li className="flex gap-3"><span className="font-bold text-gold-600">3.</span> Our team will review your video within 24-48 hours</li>
-            <li className="flex gap-3"><span className="font-bold text-gold-600">4.</span> If approved, refund will be processed within 5-7 business days</li>
-            <li className="flex gap-3"><span className="font-bold text-gold-600">5.</span> Refunds are credited to the original payment method</li>
+            <li className="flex gap-3">
+              <span className="font-bold text-gold-600">1.</span>
+              Contact us within 48 hours of delivery with your Order ID
+            </li>
+
+            <li className="flex gap-3">
+              <span className="font-bold text-gold-600">2.</span>
+              Send your <strong>unboxing video</strong> and photographs clearly showing the issue
+            </li>
+
+            <li className="flex gap-3">
+              <span className="font-bold text-gold-600">3.</span>
+              Our team will review your request within 24–48 hours
+            </li>
+
+            <li className="flex gap-3">
+              <span className="font-bold text-gold-600">4.</span>
+              Depending on the issue, we may offer a repair, replacement, store credit, or refund
+            </li>
+
+            <li className="flex gap-3">
+              <span className="font-bold text-gold-600">5.</span>
+              Approved refunds are processed immediately and generally reflect within 5–7 business days depending on your bank
+            </li>
           </ol>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="bg-white rounded-3xl p-8 shadow-elegant mb-6"
+        >
+          <h2 className="text-2xl font-bold text-chocolate-900 mb-4">
+            Shipping & Logistics Issues
+          </h2>
+
+          <div className="space-y-4 text-chocolate-700">
+            <p>
+              <strong>Delayed Deliveries:</strong> Since many of our products are
+              handcrafted and made to order, delays may occasionally occur due to
+              production schedules, weather conditions, artist availability, or courier
+              issues. We will keep you informed and assist in tracking your shipment.
+            </p>
+
+            <p>
+              <strong>Lost Shipments:</strong> If a shipment is confirmed lost in
+              transit, we will coordinate with the courier partner and provide a
+              replacement, store credit, or refund as appropriate.
+            </p>
+
+            <p>
+              <strong>Incorrect Address:</strong> Customers are responsible for
+              providing accurate shipping information. We cannot guarantee refunds or
+              replacements for orders delayed or undelivered due to incorrect or
+              incomplete addresses.
+            </p>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="bg-amber-50 border border-amber-200 rounded-3xl p-6 mb-6"
+        >
+          <h3 className="font-bold text-chocolate-900 mb-2">
+            Policy Discretion
+          </h3>
+
+          <p className="text-chocolate-700">
+            All return, replacement, and refund requests are subject to review by
+            TheRawCanvasStudio. We are committed to handling every case fairly,
+            transparently, and with the best possible customer experience in mind.
+          </p>
         </motion.div>
 
         {/* Contact for Returns */}

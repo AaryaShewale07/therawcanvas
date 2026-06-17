@@ -40,6 +40,7 @@ const Footer = () => {
       { name: 'About Us', path: '/about' },
       { name: 'Our Story', path: '/story' },
       { name: 'Blog', path: '/blog' },
+      { name: 'Privacy Policy', path: '/privacy' },
     ],
   }
 
@@ -57,12 +58,12 @@ const Footer = () => {
     setLoading(true)
     try {
       const { data } = await api.post('/newsletter/subscribe', { email })
-      
+
       if (data.success) {
         toast.success(data.message || '🎉 Subscribed successfully!')
         setSubscribed(true)
         setEmail('')
-        
+
         // Reset success state after 4 seconds
         setTimeout(() => setSubscribed(false), 4000)
       }
@@ -146,8 +147,12 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <Link to="/" className="inline-block mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 bg-gradient-to-br from-primary-500 via-gold-500 to-chocolate-600 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-white font-script text-2xl">A&C</span>
+                <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg">
+                  <img
+                    src="/logo.jpg"
+                    alt="The Raw Canvas Studio"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div>
                   <h2 className="font-heading font-bold text-2xl text-white">

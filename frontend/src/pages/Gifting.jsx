@@ -1,5 +1,7 @@
+// src/pages/Gifting.jsx
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { pageTransition, staggerContainer, staggerItem } from '../utils/animations'
 import {
   HiHeart,
@@ -10,11 +12,11 @@ import {
   HiOutlineSearch,
   HiOutlineGift,
 } from 'react-icons/hi'
+import { HiOutlineBolt } from 'react-icons/hi2'
 import api from '../utils/api'
-import { useNavigate } from 'react-router-dom'
-
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
+import { useAuth } from '../context/AuthContext'
 
 const Gifting = () => {
   const [items, setItems] = useState([])
@@ -25,6 +27,7 @@ const Gifting = () => {
   const navigate = useNavigate()
   const { addToCart } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
+  const { user, openLoginModal } = useAuth()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,8 +51,45 @@ const Gifting = () => {
     return matchesCategory && matchesSearch
   })
 
+  const handleWishlist = (e, id) => {
+    e.stopPropagation()
+    if (!user) { openLoginModal(); return }
+    toggleWishlist(id)
+  }
+
+  const handleCart = (e, id) => {
+    e.stopPropagation()
+    if (!user) { openLoginModal(); return }
+    addToCart(id, 1)
+  }
+
+  const handleView = (e, id) => {
+    e.stopPropagation()
+    navigate(`/product/${id}`)
+  }
+
+  /* ── Buy Now: navigate to checkout with product state (NO cart add) ── */
+  const handleBuyNow = (e, product) => {
+    e.stopPropagation()
+    if (!user) { openLoginModal(); return }
+    navigate('/checkout', {
+      state: {
+        buyNow: true,
+        product: {
+          _id: product._id,
+          title: product.title,
+          price: product.price,
+          image: product.images?.[0]?.url || null,
+          quantity: 1,
+        },
+      },
+    })
+  }
+
   return (
     <motion.div variants={pageTransition} initial="hidden" animate="visible" exit="exit" className="pt-24">
+
+      {/* Hero */}
       <section className="bg-gradient-to-b from-gold-50 to-cream-50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-3xl mx-auto">
@@ -62,7 +102,6 @@ const Gifting = () => {
             <p className="text-lg text-chocolate-600 mb-8">
               Thoughtfully curated gift collections, beautifully packaged for every occasion.
             </p>
-
             <div className="relative max-w-md mx-auto">
               <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
               <input
@@ -79,6 +118,7 @@ const Gifting = () => {
 
       <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
           {categories.length > 1 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -90,7 +130,6 @@ const Gifting = () => {
                 <HiOutlineFilter className="w-5 h-5" />
                 <span className="font-medium">Occasion:</span>
               </div>
-
               <div className="flex gap-3">
                 {categories.map((cat) => (
                   <motion.button
@@ -120,10 +159,14 @@ const Gifting = () => {
               <div className="w-12 h-12 border-4 border-gold-200 border-t-gold-500 rounded-full animate-spin mx-auto" />
             </div>
           ) : (
-            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
               {filtered.map((item) => {
                 const inWish = isInWishlist?.(item._id)
-
                 return (
                   <motion.div
                     key={item._id}
@@ -139,52 +182,38 @@ const Gifting = () => {
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-chocolate-300">No image</div>
+                        <div className="w-full h-full flex items-center justify-center text-chocolate-300">
+                          No image
+                        </div>
                       )}
 
                       <div className="absolute inset-0 bg-gradient-to-t from-chocolate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                       <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                        {/* Wishlist */}
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            toggleWishlist(item._id)
-                          }}
+                          onClick={(e) => handleWishlist(e, item._id)}
                           className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
                             inWish ? 'bg-gold-500 text-white' : 'bg-white text-gold-500'
                           }`}
                         >
-                          {inWish ? (
-                            <HiHeart className="w-6 h-6" />
-                          ) : (
-                            <HiOutlineHeart className="w-6 h-6" />
-                          )}
+                          {inWish ? <HiHeart className="w-6 h-6" /> : <HiOutlineHeart className="w-6 h-6" />}
                         </motion.button>
 
-                        {/* Preview */}
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/product/${item._id}`)
-                          }}
+                          onClick={(e) => handleView(e, item._id)}
                           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg"
                         >
                           <HiOutlineEye className="w-6 h-6 text-chocolate-700" />
                         </motion.button>
 
-                        {/* Cart */}
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            addToCart(item._id, 1)
-                          }}
+                          onClick={(e) => handleCart(e, item._id)}
                           className="w-12 h-12 bg-gold-500 rounded-full flex items-center justify-center shadow-lg"
                         >
                           <HiOutlineShoppingBag className="w-6 h-6 text-white" />
@@ -192,10 +221,17 @@ const Gifting = () => {
                       </div>
 
                       <div className="absolute top-4 left-4 flex flex-col gap-2">
-                        {item.isNew && <span className="px-3 py-1 bg-gold-500 text-chocolate-900 text-xs font-bold rounded-full">NEW</span>}
-                        {item.originalPrice && <span className="px-3 py-1 bg-primary-500 text-white text-xs font-bold rounded-full">SALE</span>}
+                        {item.isNew && (
+                          <span className="px-3 py-1 bg-gold-500 text-chocolate-900 text-xs font-bold rounded-full">
+                            NEW
+                          </span>
+                        )}
+                        {item.originalPrice && (
+                          <span className="px-3 py-1 bg-primary-500 text-white text-xs font-bold rounded-full">
+                            SALE
+                          </span>
+                        )}
                       </div>
-
                       {item.subCategory && (
                         <span className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-semibold text-chocolate-700">
                           {item.subCategory}
@@ -207,20 +243,49 @@ const Gifting = () => {
                       <h3 className="font-heading font-bold text-xl text-chocolate-900 mb-1 group-hover:text-gold-600 transition-colors">
                         {item.title}
                       </h3>
-
                       {item.shortDescription && (
-                        <p className="text-chocolate-500 text-sm mb-4 line-clamp-2">{item.shortDescription}</p>
+                        <p className="text-chocolate-500 text-sm mb-3 line-clamp-2">
+                          {item.shortDescription}
+                        </p>
                       )}
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          {item.price > 0 && <span className="text-xl font-bold text-gold-600">₹{item.price}</span>}
-                          {item.originalPrice && <span className="text-sm text-chocolate-400 line-through">₹{item.originalPrice}</span>}
+                          {item.price > 0 && (
+                            <span className="text-xl font-bold text-gold-600">₹{item.price}</span>
+                          )}
+                          {item.originalPrice && (
+                            <span className="text-sm text-chocolate-400 line-through">
+                              ₹{item.originalPrice}
+                            </span>
+                          )}
                         </div>
-
                         <div className="flex items-center gap-1 text-chocolate-400">
                           <span className="text-sm">{item.likes + (inWish ? 1 : 0)}</span>
                         </div>
+                      </div>
+
+                      {/* ── Action buttons ── */}
+                      <div className="flex gap-2 pt-4 border-t border-cream-100">
+                        <motion.button
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={(e) => handleCart(e, item._id)}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full border-2 border-gold-500 text-gold-600 font-semibold text-sm hover:bg-gold-50 transition-colors"
+                        >
+                          <HiOutlineShoppingBag className="w-4 h-4" />
+                          Add to Cart
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={(e) => handleBuyNow(e, item)}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full bg-gold-500 text-white font-semibold text-sm hover:bg-gold-600 transition-colors shadow-md"
+                        >
+                          <HiOutlineBolt className="w-4 h-4" />
+                          Buy Now
+                        </motion.button>
                       </div>
                     </div>
                   </motion.div>

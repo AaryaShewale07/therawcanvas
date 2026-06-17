@@ -1,5 +1,6 @@
+// src/pages/Checkout.jsx
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   HiOutlineCreditCard,
@@ -24,6 +25,20 @@ const Checkout = () => {
   const { cart, cartTotal, clearCart } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  /* ── Buy Now detection ── */
+  const isBuyNow = location.state?.buyNow === true
+  const buyNowProduct = location.state?.product || null
+
+  /* ── Derive items + subtotal from either mode ── */
+  const checkoutItems = isBuyNow
+    ? [{ post: { _id: buyNowProduct._id, title: buyNowProduct.title, price: buyNowProduct.price, images: buyNowProduct.image ? [{ url: buyNowProduct.image }] : [] }, quantity: buyNowProduct.quantity }]
+    : cart.items || []
+
+  const subtotal = isBuyNow
+    ? buyNowProduct.price * buyNowProduct.quantity
+    : cartTotal
 
   const [loading, setLoading] = useState(false)
 
@@ -36,20 +51,20 @@ const Checkout = () => {
     pincode: user?.address?.zipCode || '',
   })
 
-  // ⭐ Calculate shipping based on pincode + cart total
   const shippingInfo = useMemo(
-    () => calculateShipping(address.pincode, cartTotal),
-    [address.pincode, cartTotal]
+    () => calculateShipping(address.pincode, subtotal),
+    [address.pincode, subtotal]
   )
 
-  const finalTotal = cartTotal + shippingInfo.cost
-  const amountNeeded = amountForFreeShipping(cartTotal)
+  const finalTotal = subtotal + shippingInfo.cost
+  const amountNeeded = amountForFreeShipping(subtotal)
 
+  /* ── Redirect if nothing to checkout ── */
   useEffect(() => {
-    if (!cart.items || cart.items.length === 0) {
+    if (!isBuyNow && (!cart.items || cart.items.length === 0)) {
       navigate('/cart')
     }
-  }, [cart, navigate])
+  }, [cart, navigate, isBuyNow])
 
   const handleChange = (e) => {
     setAddress({ ...address, [e.target.name]: e.target.value })
@@ -76,10 +91,10 @@ const Checkout = () => {
   }
 
   const placeOrder = async (razorpayData = {}) => {
-    const items = cart.items.map((i) => ({
-      postId: i.post._id,
-      quantity: i.quantity,
-    }))
+    /* ── Build items array for API ── */
+    const items = isBuyNow
+      ? [{ postId: buyNowProduct._id, quantity: buyNowProduct.quantity }]
+      : cart.items.map((i) => ({ postId: i.post._id, quantity: i.quantity }))
 
     const { data } = await ordersAPI.checkout({
       items,
@@ -89,7 +104,8 @@ const Checkout = () => {
     })
 
     if (data.success) {
-      clearCart()
+      /* Only clear cart if it was a normal cart checkout */
+      if (!isBuyNow) clearCart()
       toast.success('Order placed successfully! 🎉')
       navigate(`/order-success/${data.order._id}`)
     }
@@ -100,9 +116,7 @@ const Checkout = () => {
     setLoading(true)
 
     try {
-      // ⭐ Pass FINAL total (product + shipping) to Razorpay
       const { data } = await ordersAPI.createRazorpayOrder(finalTotal)
-
       if (!data.success) throw new Error('Failed to create payment')
 
       const options = {
@@ -147,7 +161,7 @@ const Checkout = () => {
     }
   }
 
-  if (!cart.items || cart.items.length === 0) return null
+  if (!isBuyNow && (!cart.items || cart.items.length === 0)) return null
 
   return (
     <motion.div
@@ -156,13 +170,24 @@ const Checkout = () => {
       className="min-h-screen pt-24 pb-16 bg-gradient-to-b from-cream-50 to-white"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-heading font-bold text-chocolate-900 mb-8">
-          Checkout
-        </h1>
+
+        {/* Page title + Buy Now badge */}
+        <div className="flex items-center gap-4 mb-8">
+          <h1 className="text-4xl font-heading font-bold text-chocolate-900">Checkout</h1>
+          {isBuyNow && (
+            <span className="px-4 py-1.5 bg-primary-100 text-primary-700 text-sm font-bold rounded-full border border-primary-300">
+              ⚡ Buy Now
+            </span>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* LEFT — Address + Payment Info */}
+
+          {/* ══════════════════════════════════════════
+              LEFT — Address + Payment
+          ══════════════════════════════════════════ */}
           <div className="lg:col-span-2 space-y-6">
+
             {/* Shipping Address */}
             <div className="bg-white rounded-3xl shadow-elegant p-6">
               <h2 className="text-2xl font-bold text-chocolate-900 mb-4 flex items-center gap-2">
@@ -233,7 +258,6 @@ const Checkout = () => {
                   />
                 </div>
 
-                {/* ⭐ PINCODE WITH AUTO-DETECT */}
                 <div>
                   <label className="block text-sm font-semibold text-chocolate-700 mb-2">
                     Pincode
@@ -264,7 +288,7 @@ const Checkout = () => {
               </div>
             </div>
 
-            {/* Payment Info — Online Only */}
+            {/* Payment Method */}
             <div className="bg-white rounded-3xl shadow-elegant p-6">
               <h2 className="text-2xl font-bold text-chocolate-900 mb-4 flex items-center gap-2">
                 <HiOutlineCreditCard className="w-6 h-6" />
@@ -286,22 +310,17 @@ const Checkout = () => {
                 </div>
 
                 <div className="grid grid-cols-4 gap-3 mb-4">
-                  <div className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm">
-                    <div className="text-2xl mb-1">💳</div>
-                    <p className="text-xs font-semibold">Cards</p>
-                  </div>
-                  <div className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm">
-                    <div className="text-2xl mb-1">📱</div>
-                    <p className="text-xs font-semibold">UPI</p>
-                  </div>
-                  <div className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm">
-                    <div className="text-2xl mb-1">🏦</div>
-                    <p className="text-xs font-semibold">Net Banking</p>
-                  </div>
-                  <div className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm">
-                    <div className="text-2xl mb-1">💰</div>
-                    <p className="text-xs font-semibold">Wallets</p>
-                  </div>
+                  {[
+                    { icon: '💳', label: 'Cards' },
+                    { icon: '📱', label: 'UPI' },
+                    { icon: '🏦', label: 'Net Banking' },
+                    { icon: '💰', label: 'Wallets' },
+                  ].map((m) => (
+                    <div key={m.label} className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm">
+                      <div className="text-2xl mb-1">{m.icon}</div>
+                      <p className="text-xs font-semibold">{m.label}</p>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-cream-200">
@@ -312,37 +331,58 @@ const Checkout = () => {
             </div>
           </div>
 
-          {/* RIGHT — Order Summary */}
+          {/* ══════════════════════════════════════════
+              RIGHT — Order Summary
+          ══════════════════════════════════════════ */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl shadow-elegant p-6 sticky top-24">
               <h2 className="text-2xl font-bold text-chocolate-900 mb-4">Order Summary</h2>
 
+              {/* Items list */}
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                {cart.items.map((item) => (
+                {checkoutItems.map((item) => (
                   <div key={item.post._id} className="flex gap-3 items-center">
-                    <img
-                      src={item.post.images?.[0]?.url}
-                      alt={item.post.title}
-                      className="w-16 h-16 rounded-xl object-cover"
-                    />
-                    <div className="flex-1">
-                      <p className="font-semibold text-chocolate-900 text-sm line-clamp-1">{item.post.title}</p>
+                    {item.post.images?.[0]?.url ? (
+                      <img
+                        src={item.post.images[0].url}
+                        alt={item.post.title}
+                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-cream-100 flex items-center justify-center flex-shrink-0 text-2xl">
+                        🎨
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-chocolate-900 text-sm line-clamp-1">
+                        {item.post.title}
+                      </p>
                       <p className="text-xs text-chocolate-500">Qty: {item.quantity}</p>
                     </div>
-                    <p className="font-bold text-chocolate-900 text-sm">₹{item.post.price * item.quantity}</p>
+                    <p className="font-bold text-chocolate-900 text-sm flex-shrink-0">
+                      ₹{item.post.price * item.quantity}
+                    </p>
                   </div>
                 ))}
               </div>
+
+              {/* Buy Now info banner */}
+              {isBuyNow && (
+                <div className="mb-4 p-3 bg-primary-50 rounded-xl border border-primary-200">
+                  <p className="text-xs text-primary-700 font-semibold flex items-center gap-1.5">
+                    ⚡ Direct purchase — not added to your cart
+                  </p>
+                </div>
+              )}
 
               <hr className="my-4" />
 
               <div className="space-y-2 text-chocolate-700">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>₹{cartTotal}</span>
+                  <span>₹{subtotal}</span>
                 </div>
 
-                {/* ⭐ SHIPPING ROW */}
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-1">
                     <HiOutlineTruck className="w-4 h-4" />
@@ -361,7 +401,6 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* Free shipping message */}
               {shippingInfo.isValid && !shippingInfo.isFree && amountNeeded > 0 && (
                 <div className="mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
                   <p className="text-xs text-amber-800">
@@ -415,6 +454,7 @@ const Checkout = () => {
               </p>
             </div>
           </div>
+
         </div>
       </div>
     </motion.div>
