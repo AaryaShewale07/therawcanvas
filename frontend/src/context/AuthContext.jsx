@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const AuthContext = createContext()
 
 // ============ API HELPER ============
-const API_URL = 'http://localhost:5000/api'
+const API_URL = import.meta.env.VITE_API_URL
 
 const apiFetch = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token')
