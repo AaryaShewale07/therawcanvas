@@ -7,11 +7,28 @@ if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
 }
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // use TLS (Render allows 587, blocks 465)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000,   // 10s
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
+  tls: {
+    rejectUnauthorized: false,
+  },
+})
+
+// Verify connection on startup (optional but helpful)
+transporter.verify((err, success) => {
+  if (err) {
+    console.error('❌ SMTP connection failed:', err.message)
+  } else {
+    console.log('✅ SMTP ready to send emails')
+  }
 })
 
 const sendEmail = async ({ to, subject, html }) => {
@@ -21,7 +38,9 @@ const sendEmail = async ({ to, subject, html }) => {
     subject,
     html,
   }
-  await transporter.sendMail(mailOptions)
+  const info = await transporter.sendMail(mailOptions)
+  console.log('📧 Email sent:', info.messageId, '→', to)
+  return info
 }
 
 export default sendEmail
