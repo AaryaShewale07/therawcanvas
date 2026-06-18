@@ -262,9 +262,9 @@ const BookingModal = ({ event, onClose, onSuccess }) => {
       // If free — go straight to verify
       if (orderData.amount === 0) {
         await api.post('/bookings/verify', {
-          razorpayOrderId: orderData.orderId,
-          razorpayPaymentId: 'free_' + Date.now(),
-          razorpaySignature: 'free',
+          razorpay_order_id: orderData.orderId,
+          razorpay_payment_id: 'free_' + Date.now(),
+          razorpay_signature: 'free',
           bookingId: orderData.bookingId,
           name: formData.name,
           email: formData.email,
@@ -298,9 +298,9 @@ const BookingModal = ({ event, onClose, onSuccess }) => {
         handler: async (response) => {
           try {
             await api.post('/bookings/verify', {
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
               bookingId: orderData.bookingId,
               name: formData.name,
               email: formData.email,
