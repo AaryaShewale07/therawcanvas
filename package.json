@@ -9,6 +9,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "cors": "^2.8.6"
+    "cloudinary": "^1.41.3",
+    "cors": "^2.8.6",
+    "multer-storage-cloudinary": "^4.0.0"
   }
 }
