@@ -1,11 +1,11 @@
 import axios from 'axios'
 
 // ⭐ Use environment variable with fallback
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 30000, // 30 second timeout
+  timeout: 30000, // 30 second default timeout
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -14,11 +14,9 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
 
-    // ⭐ Only attach valid tokens (prevents "Bearer undefined" issues)
     if (token && token !== 'undefined' && token !== 'null' && token.length > 20) {
       config.headers.Authorization = `Bearer ${token}`
     } else if (token === 'undefined' || token === 'null') {
-      // Clean up invalid tokens
       localStorage.removeItem('token')
     }
 
@@ -31,7 +29,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Network error (no internet)
     if (!error.response) {
       console.error('Network error - check your connection')
       return Promise.reject({
@@ -43,7 +40,6 @@ api.interceptors.response.use(
     const status = error.response?.status
     const message = error.response?.data?.message || ''
 
-    // ⭐ Auto-logout only on truly invalid tokens
     if (status === 401) {
       const isAuthIssue =
         message.toLowerCase().includes('malformed') ||
@@ -56,19 +52,16 @@ api.interceptors.response.use(
         localStorage.removeItem('token')
         localStorage.removeItem('user')
 
-        // Only redirect from admin pages (not on every 401)
         if (window.location.pathname.startsWith('/admin')) {
           window.location.href = '/'
         }
       }
     }
 
-    // ⭐ Rate limit error (429)
     if (status === 429) {
       console.warn('Too many requests')
     }
 
-    // ⭐ Server error (500+)
     if (status >= 500) {
       console.error('Server error:', message)
     }
@@ -106,9 +99,11 @@ export const wishlistAPI = {
 }
 
 // ============ ORDERS ============
+// ⭐ Payment endpoints get 90s timeout (Render cold start + Razorpay API can be slow)
 export const ordersAPI = {
-  createRazorpayOrder: (amount) => api.post('/orders/create-razorpay-order', { amount }),
-  checkout: (data) => api.post('/orders/checkout', data),
+  createRazorpayOrder: (amount) =>
+    api.post('/orders/create-razorpay-order', { amount }, { timeout: 90000 }),
+  checkout: (data) => api.post('/orders/checkout', data, { timeout: 90000 }),
   getMy: () => api.get('/orders/my'),
   getById: (id) => api.get(`/orders/${id}`),
   cancel: (id) => api.put(`/orders/${id}/cancel`),
@@ -142,10 +137,9 @@ export const reviewsAPI = {
 
 // ============ BOOKINGS (Workshop) ============
 export const bookingsAPI = {
-  createOrder: (data) => api.post('/bookings/create-order', data),
-  verifyPayment: (data) => api.post('/bookings/verify', data),
+  createOrder: (data) => api.post('/bookings/create-order', data, { timeout: 90000 }),
+  verifyPayment: (data) => api.post('/bookings/verify', data, { timeout: 90000 }),
   getById: (id) => api.get(`/bookings/${id}`),
-  // Admin
   getAll: () => api.get('/bookings'),
 }
 
