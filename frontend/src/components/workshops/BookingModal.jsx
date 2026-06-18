@@ -17,8 +17,6 @@ import {
 } from 'react-icons/hi'
 import api from '../../utils/api'
 
-const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID
-
 const formatDate = (date) =>
   new Date(date).toLocaleDateString('en-IN', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -253,16 +251,21 @@ const BookingModal = ({ event, onClose, onSuccess }) => {
         payload.peopleCount = legacyCount
       }
 
-      // Create Razorpay order
-      const { data } = await api.post('/bookings/create-order', payload)
+      // ⭐ Create Razorpay order (backend wraps response in { success, data: {...} })
+      const response = await api.post('/bookings/create-order', payload)
+      const orderData = response.data?.data
+
+      if (!orderData || !orderData.orderId) {
+        throw new Error('Invalid response from server. Please try again.')
+      }
 
       // If free — go straight to verify
-      if (data.amount === 0) {
+      if (orderData.amount === 0) {
         await api.post('/bookings/verify', {
-          razorpayOrderId: data.orderId,
+          razorpayOrderId: orderData.orderId,
           razorpayPaymentId: 'free_' + Date.now(),
           razorpaySignature: 'free',
-          bookingId: data.bookingId,
+          bookingId: orderData.bookingId,
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
@@ -273,14 +276,19 @@ const BookingModal = ({ event, onClose, onSuccess }) => {
         return
       }
 
+      // ⭐ Validate key before opening Razorpay
+      if (!orderData.razorpayKeyId) {
+        throw new Error('Payment gateway not configured. Please contact support.')
+      }
+
       // Open Razorpay checkout
       const rzp = new window.Razorpay({
-        key: RAZORPAY_KEY,
-        amount: data.amount,
-        currency: data.currency,
+        key: orderData.razorpayKeyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
         name: 'Workshop Booking',
         description: event.title,
-        order_id: data.orderId,
+        order_id: orderData.orderId,
         prefill: {
           name: formData.name,
           email: formData.email,
@@ -293,7 +301,7 @@ const BookingModal = ({ event, onClose, onSuccess }) => {
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
-              bookingId: data.bookingId,
+              bookingId: orderData.bookingId,
               name: formData.name,
               email: formData.email,
               phone: formData.phone,
@@ -316,6 +324,7 @@ const BookingModal = ({ event, onClose, onSuccess }) => {
 
       rzp.open()
     } catch (err) {
+      console.error('Booking error:', err)
       setError(err.response?.data?.message || err.message || 'Something went wrong')
       setLoading(false)
     }
