@@ -47,11 +47,35 @@ app.use(
   })
 )
 
+// ============ CORS CONFIGURATION ============
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CLIENT_URL, // Netlify URL from Render Environment Variables
+].filter(Boolean)
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: (origin, callback) => {
+      // Allow Postman, mobile apps, server-to-server requests
+      if (!origin) return callback(null, true)
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true)
+      }
+
+      console.log('Blocked by CORS:', origin)
+      return callback(new Error(`CORS blocked for origin: ${origin}`))
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
   })
 )
 
