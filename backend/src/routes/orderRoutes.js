@@ -8,6 +8,7 @@ import {
   createRazorpayOrder,
   updateOrderStatus,
   getAllOrders,
+  checkReferralDiscount, // ⭐ NEW
 } from '../controllers/orderController.js'
 
 const router = express.Router()
@@ -15,6 +16,9 @@ const router = express.Router()
 // Payment
 router.post('/create-razorpay-order', protect, createRazorpayOrder)
 router.post('/checkout', protect, checkout)
+
+// ⭐ NEW — Check if user is eligible for first-order referral discount
+router.get('/check-referral-discount', protect, checkReferralDiscount)
 
 // User
 router.get('/my', protect, getMyOrders)

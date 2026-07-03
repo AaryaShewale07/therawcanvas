@@ -247,3 +247,119 @@
   color: #111827 !important;
   animation: none !important;
 }
+
+/* ═══════════════════════════════════════════════════
+   ⭐ ANDROID-SPECIFIC RESPONSIVE FIXES
+   ═══════════════════════════════════════════════════ */
+
+/* Fix 1: Prevent any element from causing horizontal overflow */
+html, body, #root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Fix 2: Make all images & videos responsive by default */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Fix 3: Fix Android Chrome address bar viewport issue */
+.min-h-screen {
+  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
+  min-height: 100dvh;
+}
+
+.h-screen {
+  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
+  height: 100dvh;
+}
+
+/* Fix 4: Fix sticky/fixed positioning on Android */
+.fixed {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* Fix 5: Better tap targets on Android */
+@media (max-width: 640px) {
+  button, a[role="button"], [type="button"], [type="submit"] {
+    min-height: 44px;
+  }
+}
+
+/* Fix 6: Prevent text overflow */
+h1, h2, h3, h4, h5, h6, p, span, div {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Fix 7: Force container padding on small screens */
+@media (max-width: 640px) {
+  .max-w-7xl, .max-w-6xl, .max-w-5xl, .max-w-4xl, .max-w-3xl, .max-w-2xl {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Fix 8: Prevent input zoom on Android */
+@media (max-width: 640px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Fix 9: Smoother scrolling */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fix 10: Fix backdrop-blur performance on Android */
+@supports not (backdrop-filter: blur(10px)) {
+  .backdrop-blur-md, .backdrop-blur-sm, .backdrop-blur-lg {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+  }
+}
+
+/* Fix 11: Improve scroll performance on long pages */
+section, article, main {
+  contain: layout style;
+}
+
+/* Fix 12: Fix toast notifications on mobile */
+@media (max-width: 640px) {
+  [data-sonner-toaster], .Toaster {
+    max-width: calc(100vw - 32px) !important;
+    left: 16px !important;
+    right: 16px !important;
+  }
+}
+
+/* Fix 13: Better button rendering on Android */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Fix 14: Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* Hide scrollbar but keep scroll functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}

@@ -7,10 +7,10 @@ import {
   HiOutlineCheck,
   HiOutlineTruck,
   HiOutlineXCircle,
-  HiOutlineFilter,
   HiOutlineRefresh,
   HiOutlineShoppingBag,
   HiOutlineClock,
+  HiOutlineGift, // ⭐ NEW
 } from 'react-icons/hi'
 import { FaWhatsapp, FaRupeeSign } from 'react-icons/fa'
 import toast from 'react-hot-toast'
@@ -40,6 +40,7 @@ const AdminOrders = () => {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [updating, setUpdating] = useState(null)
+  const [triggeringReward, setTriggeringReward] = useState(null) // ⭐ NEW
 
   const fetchOrders = async () => {
     try {
@@ -77,11 +78,41 @@ const AdminOrders = () => {
     try {
       await api.put(`/orders/${orderId}/status`, { status: newStatus })
       toast.success(`Order marked as ${newStatus}! Email sent.`)
+
+      // ⭐ Show extra toast if reward may have been triggered
+      if (newStatus === 'delivered') {
+        setTimeout(() => {
+          toast.success('🎁 Referral reward auto-triggered (if applicable)', {
+            duration: 4000,
+          })
+        }, 500)
+      }
+
       fetchOrders()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update')
     } finally {
       setUpdating(null)
+    }
+  }
+
+  // ⭐ NEW — Manual trigger referral reward
+  const handleTriggerReward = async (orderId, e) => {
+    e.stopPropagation()
+    if (!window.confirm('Manually trigger referral reward for this order?')) return
+
+    setTriggeringReward(orderId)
+    try {
+      const { data } = await api.post(`/referrals/admin/trigger-reward/${orderId}`)
+      if (data.success) {
+        toast.success(`🎁 Reward issued! Code: ${data.coupon.code}`, {
+          duration: 5000,
+        })
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not trigger reward')
+    } finally {
+      setTriggeringReward(null)
     }
   }
 
@@ -184,7 +215,7 @@ const AdminOrders = () => {
         </div>
       </div>
 
-      {/* Stats Cards - Responsive Grid */}
+      {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <StatCard label="Total" value={stats.totalOrders} icon={HiOutlineShoppingBag} color="bg-blue-500" />
@@ -198,7 +229,6 @@ const AdminOrders = () => {
       {/* Filters */}
       <div className="bg-white rounded-2xl shadow p-3 md:p-4">
         <div className="flex flex-col md:flex-row gap-2 md:gap-3 items-stretch md:items-center">
-          {/* Search */}
           <div className="flex-1 relative">
             <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -210,7 +240,6 @@ const AdminOrders = () => {
             />
           </div>
 
-          {/* Category & Status filters */}
           <div className="flex gap-2">
             <select
               value={categoryFilter}
@@ -272,6 +301,7 @@ const AdminOrders = () => {
                   const categories = [...new Set(order.items.map((i) => i.category))]
                   const nextAction = getNextAction(order.orderStatus)
                   const isUpdating = updating === order._id
+                  const isTriggeringReward = triggeringReward === order._id
 
                   return (
                     <tr key={order._id} className="border-b border-gray-100 hover:bg-gray-50">
@@ -293,6 +323,12 @@ const AdminOrders = () => {
                         {order.hasCustomization && (
                           <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 mt-1">
                             <FaWhatsapp className="w-3 h-3" /> Custom
+                          </span>
+                        )}
+                        {/* ⭐ NEW — Referral badge */}
+                        {order.referralApplied && (
+                          <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 mt-1 ml-1">
+                            🎁 Referred
                           </span>
                         )}
                       </td>
@@ -345,7 +381,7 @@ const AdminOrders = () => {
 
                       {/* Actions */}
                       <td className="px-3 py-3 align-top">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1 flex-wrap">
                           <button
                             onClick={() => setSelectedOrder(order)}
                             className="p-1.5 hover:bg-gray-100 rounded-lg"
@@ -366,6 +402,25 @@ const AdminOrders = () => {
                                 <>
                                   {nextAction.icon && <nextAction.icon className="w-3 h-3" />}
                                   {nextAction.label}
+                                </>
+                              )}
+                            </button>
+                          )}
+
+                          {/* ⭐ NEW — Trigger Reward button for delivered orders with referral */}
+                          {order.orderStatus === 'delivered' && order.referralApplied && (
+                            <button
+                              onClick={(e) => handleTriggerReward(order._id, e)}
+                              disabled={isTriggeringReward}
+                              className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-primary-500 to-gold-500 text-white text-[11px] font-bold rounded-lg shadow hover:shadow-md disabled:opacity-50"
+                              title="Manually trigger referral reward"
+                            >
+                              {isTriggeringReward ? (
+                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  <HiOutlineGift className="w-3 h-3" />
+                                  Reward
                                 </>
                               )}
                             </button>
@@ -401,6 +456,8 @@ const AdminOrders = () => {
           <OrderDetailsModal
             order={selectedOrder}
             onClose={() => setSelectedOrder(null)}
+            onTriggerReward={handleTriggerReward}
+            isTriggeringReward={triggeringReward === selectedOrder?._id}
           />
         )}
       </AnimatePresence>
@@ -408,7 +465,6 @@ const AdminOrders = () => {
   )
 }
 
-// Stat Card Component
 const StatCard = ({ label, value, icon: Icon, color }) => (
   <div className="bg-white rounded-2xl shadow p-4">
     <div className={`w-9 h-9 ${color} rounded-lg flex items-center justify-center mb-2`}>
@@ -420,7 +476,7 @@ const StatCard = ({ label, value, icon: Icon, color }) => (
 )
 
 // Order Details Modal
-const OrderDetailsModal = ({ order, onClose }) => {
+const OrderDetailsModal = ({ order, onClose, onTriggerReward, isTriggeringReward }) => {
   const orderId = order._id.slice(-8).toUpperCase()
 
   return (
@@ -462,6 +518,16 @@ const OrderDetailsModal = ({ order, onClose }) => {
             {order.hasCustomization && (
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-100 text-yellow-700">
                 🎨 CUSTOMIZATION
+              </span>
+            )}
+            {order.referralApplied && (
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-100 text-purple-700">
+                🎁 REFERRED USER
+              </span>
+            )}
+            {order.coupon?.code && (
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+                🎟️ {order.coupon.code}
               </span>
             )}
           </div>
@@ -514,6 +580,14 @@ const OrderDetailsModal = ({ order, onClose }) => {
                 <span>Subtotal:</span>
                 <span>₹{order.subtotal || order.totalAmount}</span>
               </div>
+
+              {order.coupon?.code && (
+                <div className="flex justify-between text-green-300">
+                  <span>Discount ({order.coupon.code}):</span>
+                  <span>-₹{order.coupon.discountAmount}</span>
+                </div>
+              )}
+
               <div className="flex justify-between">
                 <span>Shipping {order.shippingZone && `(${order.shippingZone})`}:</span>
                 <span className={order.shippingCost === 0 ? 'text-green-300 font-bold' : ''}>
@@ -527,6 +601,27 @@ const OrderDetailsModal = ({ order, onClose }) => {
               </div>
             </div>
           </div>
+
+          {/* ⭐ NEW — Trigger Reward CTA in modal */}
+          {order.orderStatus === 'delivered' && order.referralApplied && (
+            <button
+              onClick={(e) => onTriggerReward(order._id, e)}
+              disabled={isTriggeringReward}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-primary-500 via-primary-600 to-gold-500 text-white font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
+            >
+              {isTriggeringReward ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Triggering...
+                </>
+              ) : (
+                <>
+                  <HiOutlineGift className="w-5 h-5" />
+                  Trigger Referral Reward (₹100 coupon to referrer)
+                </>
+              )}
+            </button>
+          )}
 
           {order.shippingAddress?.phone && (
             <a

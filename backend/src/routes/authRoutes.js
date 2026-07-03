@@ -14,6 +14,7 @@ import {
   getAllUsers,
   updateUserRole,
   toggleUserStatus,
+  googleAuth,
 } from '../controllers/authController.js'
 
 import { protect, admin } from '../middleware/authMiddleware.js'
@@ -24,6 +25,7 @@ const router = express.Router()
 // PUBLIC
 router.post('/register', register)
 router.post('/login', login)
+router.post('/google', googleAuth)
 router.post('/verify-backup', verifyBackupCode)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password', resetPassword)

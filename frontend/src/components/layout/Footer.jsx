@@ -79,7 +79,7 @@ const Footer = () => {
       {/* Newsletter Section */}
       <div className="border-b border-chocolate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
             <div className="text-center md:text-left">
               <h3 className="text-2xl font-heading font-bold text-white mb-2">
                 Join Our Sweet Journey
@@ -94,7 +94,7 @@ const Footer = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="flex gap-3 w-full md:w-auto"
+              className="flex flex-col sm:flex-row gap-3 w-full md:w-auto"
             >
               {subscribed ? (
                 // Success state
@@ -115,15 +115,13 @@ const Footer = () => {
                     required
                     disabled={loading}
                     placeholder="Your email address"
-                    className="flex-1 md:w-72 px-5 py-3 bg-chocolate-700 border border-chocolate-600 rounded-full text-cream-100 placeholder-cream-400 focus:outline-none focus:border-gold-500 transition-colors disabled:opacity-50"
-                  />
+                    className="flex-1 sm:w-72 px-5 py-3 bg-chocolate-700 border border-chocolate-600 rounded-full text-cream-100 placeholder-cream-400 focus:outline-none focus:border-gold-500 transition-colors disabled:opacity-50 text-base" />
                   <motion.button
                     whileHover={{ scale: loading ? 1 : 1.05 }}
                     whileTap={{ scale: loading ? 1 : 0.95 }}
                     type="submit"
                     disabled={loading}
-                    className="px-8 py-3 bg-gradient-to-r from-gold-400 to-gold-600 text-chocolate-900 font-semibold rounded-full hover:shadow-gold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
+                    className="px-6 sm:px-8 py-3 bg-gradient-to-r from-gold-400 to-gold-600 text-chocolate-900 font-semibold rounded-full hover:shadow-gold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"                  >
                     {loading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-chocolate-900 border-t-transparent rounded-full animate-spin" />
@@ -141,15 +139,15 @@ const Footer = () => {
       </div>
 
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 md:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-8 md:gap-12">
           {/* Brand Column */}
-          <div className="lg:col-span-2">
+          <div className="col-span-2 md:col-span-2 lg:col-span-2">
             <Link to="/" className="inline-block mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg">
+                <div className="w-24 h-24">
                   <img
-                    src="/logo.jpg"
+                    src="/logo.png"
                     alt="The Raw Canvas Studio"
                     className="w-full h-full object-contain"
                   />
@@ -209,7 +207,7 @@ const Footer = () => {
 
           {/* Shop */}
           <div>
-            <h4 className="font-heading font-semibold text-lg text-white mb-6">Shop</h4>
+            <h4 className="font-heading font-semibold text-base sm:text-lg text-white mb-4 sm:mb-6">Shop</h4>
             <ul className="space-y-3">
               {footerLinks.shop.map((link) => (
                 <li key={link.name}>
@@ -254,12 +252,11 @@ const Footer = () => {
       {/* Bottom Bar */}
       <div className="border-t border-chocolate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-cream-400 text-sm">
-              © {currentYear} TheRawCanvasStudio. Crafted with{' '}
-              <FaHeart className="inline-block w-4 h-4 text-primary-500 mx-1" />
-              All rights reserved.
-            </p>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 text-center md:text-left">            <p className="text-cream-400 text-sm">
+            © {currentYear} TheRawCanvasStudio. Crafted with{' '}
+            <FaHeart className="inline-block w-4 h-4 text-primary-500 mx-1" />
+            All rights reserved.
+          </p>
 
             <div className="flex items-center gap-6 text-sm">
               <Link to="/privacy" className="text-cream-400 hover:text-gold-400 transition-colors">

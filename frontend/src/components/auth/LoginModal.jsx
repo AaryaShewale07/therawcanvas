@@ -6,13 +6,14 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { modalVariants, backdropVariants } from '../../utils/animations'
 import toast from 'react-hot-toast'
+import { GoogleLogin } from '@react-oauth/google'
 
 const MAX_BACKUP_ATTEMPTS = 3
 
 const LoginModal = () => {
   const {
     isLoginModalOpen, closeModals, openSignupModal,
-    login, verifyBackupCode, forgotPassword, isLoading
+    login, verifyBackupCode, forgotPassword, isLoading, googleLogin,
   } = useAuth()
 
   const [showPassword, setShowPassword] = useState(false)
@@ -94,6 +95,20 @@ const LoginModal = () => {
     }
   }
 
+  // ✅ Google Login Handlers
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const result = await googleLogin(credentialResponse.credential)
+    if (result.success) {
+      toast.success(result.isNewUser ? 'Account created! Welcome!' : 'Welcome back!')
+    } else {
+      toast.error(result.error || 'Google login failed')
+    }
+  }
+
+  const handleGoogleError = () => {
+    toast.error('Google login failed. Please try again.')
+  }
+
   return (
     <AnimatePresence>
       {isLoginModalOpen && (
@@ -111,7 +126,7 @@ const LoginModal = () => {
             animate="visible"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto hide-scrollbar"
           >
             {/* Decorative Header */}
             <div className="h-24 bg-gradient-to-r from-primary-500 via-gold-500 to-chocolate-600 relative overflow-hidden">
@@ -130,16 +145,16 @@ const LoginModal = () => {
             </div>
 
             <div className="p-8 -mt-10">
-              {/* ✅ LOGO instead of A&C */}
-              <div className="w-20 h-20 items-center justify-center mx-auto mb-6 overflow-hidden border-4 border-white">
+              {/* LOGO */}
+               <div className="w-32 h-32 flex items-center justify-center mx-auto mt-2 mb-0">
                 <img
-                  src="/logo.jpg"
+                  src="/logo2.png"
                   alt="TheRawCanvasStudio Logo"
-                  className="w-full h-full object-contain p-1"
+                  className="w-full h-full object-contain"
                 />
               </div>
 
-              <h2 className="text-2xl font-heading font-bold text-chocolate-900 text-center mb-2">
+              <h2 className="text-2xl font-heading font-bold text-chocolate-900 text-center mb-2 -mt-2">
                 Welcome Back!
               </h2>
               <p className="text-chocolate-500 text-center mb-8">
@@ -147,7 +162,7 @@ const LoginModal = () => {
               </p>
 
               <form onSubmit={handleLoginSubmit} className="space-y-5">
-                {/* ✅ Email — BIGGER */}
+                {/* Email */}
                 <div>
                   <label className="block text-sm font-medium text-chocolate-700 mb-2">
                     Email Address
@@ -165,7 +180,7 @@ const LoginModal = () => {
                   </div>
                 </div>
 
-                {/* ── PASSWORD VIEW ── */}
+                {/* PASSWORD / BACKUP VIEW */}
                 <AnimatePresence mode="wait">
                   {view === 'password' ? (
                     <motion.div
@@ -239,10 +254,8 @@ const LoginModal = () => {
                         ) : 'Sign In'}
                       </motion.button>
                     </motion.div>
-
                   ) : (
-
-                    /* ── BACKUP CODE VIEW ── */
+                    /* BACKUP CODE VIEW */
                     <motion.div
                       key="backup-view"
                       initial={{ opacity: 0, y: 8 }}
@@ -337,6 +350,26 @@ const LoginModal = () => {
                   )}
                 </AnimatePresence>
               </form>
+
+              {/* ✅ DIVIDER */}
+              <div className="relative flex items-center my-6">
+                <div className="flex-grow border-t border-cream-200"></div>
+                <span className="flex-shrink mx-4 text-chocolate-400 text-sm">OR</span>
+                <div className="flex-grow border-t border-cream-200"></div>
+              </div>
+
+              {/* ✅ GOOGLE LOGIN BUTTON */}
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="outline"
+                  size="large"
+                  text="continue_with"
+                  shape="pill"
+                  width="320"
+                />
+              </div>
 
               <p className="text-center text-chocolate-500 mt-6">
                 Don't have an account?{' '}

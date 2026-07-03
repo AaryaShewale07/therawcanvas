@@ -1,672 +1,714 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    HiOutlineUser,
-    HiOutlineMail,
-    HiOutlinePhone,
-    HiOutlineLocationMarker,
-    HiOutlineCamera,
-    HiOutlinePencil,
-    HiOutlineCheck,
-    HiOutlineX,
-    HiOutlinePhotograph,
-    HiOutlineTrash
+  HiOutlineUser,
+  HiOutlineMail,
+  HiOutlinePhone,
+  HiOutlineLocationMarker,
+  HiOutlineCamera,
+  HiOutlinePencil,
+  HiOutlineCheck,
+  HiOutlineX,
+  HiOutlinePhotograph,
+  HiOutlineTrash,
 } from 'react-icons/hi'
 import { useAuth } from '../../context/AuthContext'
 import { pageTransition } from '../../utils/animations'
 import toast from 'react-hot-toast'
+import ReferralCard from './ReferralCard'
 
-const API_URL = import.meta.env.VITE_API_URL 
+const API_URL = import.meta.env.VITE_API_URL
 
 const Profile = () => {
-    const { user, setUser } = useAuth()
-    const [isEditing, setIsEditing] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
-    const [isImageModalOpen, setIsImageModalOpen] = useState(false)
-    const [isUploadingImage, setIsUploadingImage] = useState(false)
-    const [imagePreview, setImagePreview] = useState(null)
-    const [selectedFile, setSelectedFile] = useState(null)
-    const fileInputRef = useRef(null)
+  const { user, setUser, refreshUser } = useAuth()
+  const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const fileInputRef = useRef(null)
 
-    const [formData, setFormData] = useState({
-        name: user?.name || '',
-        email: user?.email || '',
-        phone: user?.phone || '',
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    address: {
+      street: user?.address?.street || '',
+      city: user?.address?.city || '',
+      state: user?.address?.state || '',
+      zipCode: user?.address?.zipCode || '',
+      country: user?.address?.country || '',
+    },
+  })
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
         address: {
-            street: user?.address?.street || '',
-            city: user?.address?.city || '',
-            state: user?.address?.state || '',
-            zipCode: user?.address?.zipCode || '',
-            country: user?.address?.country || '',
-        }
+          street: user.address?.street || '',
+          city: user.address?.city || '',
+          state: user.address?.state || '',
+          zipCode: user.address?.zipCode || '',
+          country: user.address?.country || '',
+        },
+      })
+    }
+  }, [user])
+
+  // ⭐ Refresh user data on mount to get latest referralStats
+  useEffect(() => {
+    console.log('🔄 Refreshing user data...')
+    refreshUser()
+  }, [])
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    if (name.startsWith('address.')) {
+      const addressField = name.split('.')[1]
+      setFormData((prev) => ({
+        ...prev,
+        address: { ...prev.address, [addressField]: value },
+      }))
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }))
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${API_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Update failed')
+      setUser(data.data.user)
+      toast.success('Profile updated successfully!')
+      setIsEditing(false)
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setFormData({
+      name: user?.name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      address: {
+        street: user?.address?.street || '',
+        city: user?.address?.city || '',
+        state: user?.address?.state || '',
+        zipCode: user?.address?.zipCode || '',
+        country: user?.address?.country || '',
+      },
     })
+    setIsEditing(false)
+  }
 
-    useEffect(() => {
-        if (user) {
-            setFormData({
-                name: user.name || '',
-                email: user.email || '',
-                phone: user.phone || '',
-                address: {
-                    street: user.address?.street || '',
-                    city: user.address?.city || '',
-                    state: user.address?.state || '',
-                    zipCode: user.address?.zipCode || '',
-                    country: user.address?.country || '',
-                }
-            })
-        }
-    }, [user])
+  const openImageModal = () => {
+    setIsImageModalOpen(true)
+    setImagePreview(null)
+    setSelectedFile(null)
+  }
 
-    const handleChange = (e) => {
-        const { name, value } = e.target
-        if (name.startsWith('address.')) {
-            const addressField = name.split('.')[1]
-            setFormData(prev => ({
-                ...prev,
-                address: {
-                    ...prev.address,
-                    [addressField]: value
-                }
-            }))
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }))
-        }
+  const closeImageModal = () => {
+    setIsImageModalOpen(false)
+    setImagePreview(null)
+    setSelectedFile(null)
+  }
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB')
+        return
+      }
+      setSelectedFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => setImagePreview(reader.result)
+      reader.readAsDataURL(file)
     }
+  }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        setIsLoading(true)
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
 
-        try {
-            const token = localStorage.getItem('token')
-
-            const res = await fetch(`${API_URL}/auth/profile`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    name: formData.name,
-                    phone: formData.phone,
-                    address: formData.address,
-                }),
-            })
-
-            const data = await res.json()
-
-            if (!res.ok) throw new Error(data.message || 'Update failed')
-
-            setUser(data.data.user)
-            toast.success('Profile updated successfully!')
-            setIsEditing(false)
-
-        } catch (error) {
-            toast.error(error.message)
-        } finally {
-            setIsLoading(false)
-        }
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB')
+        return
+      }
+      setSelectedFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => setImagePreview(reader.result)
+      reader.readAsDataURL(file)
     }
+  }
 
-    const handleCancel = () => {
-        setFormData({
-            name: user?.name || '',
-            email: user?.email || '',
-            phone: user?.phone || '',
-            address: {
-                street: user?.address?.street || '',
-                city: user?.address?.city || '',
-                state: user?.address?.state || '',
-                zipCode: user?.address?.zipCode || '',
-                country: user?.address?.country || '',
-            }
-        })
-        setIsEditing(false)
+  const handleImageUpload = async () => {
+    if (!selectedFile) {
+      toast.error('Please select an image')
+      return
     }
-
-    const openImageModal = () => {
-        setIsImageModalOpen(true)
-        setImagePreview(null)
-        setSelectedFile(null)
+    setIsUploadingImage(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) throw new Error('Please login again')
+      const formDataToSend = new FormData()
+      formDataToSend.append('avatar', selectedFile)
+      const res = await fetch(`${API_URL}/auth/avatar`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formDataToSend,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Upload failed')
+      setUser(data.data.user)
+      toast.success('Profile image updated successfully!')
+      closeImageModal()
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error(error.message || 'Failed to upload image')
+    } finally {
+      setIsUploadingImage(false)
     }
+  }
 
-    const closeImageModal = () => {
-        setIsImageModalOpen(false)
-        setImagePreview(null)
-        setSelectedFile(null)
+  const handleRemoveAvatar = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to remove your profile picture?'
+    )
+    if (!confirmed) return
+    setIsUploadingImage(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) throw new Error('Please login again')
+      const res = await fetch(`${API_URL}/auth/avatar`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Remove failed')
+      setUser(data.data.user)
+      toast.success('Profile image removed!')
+      closeImageModal()
+    } catch (error) {
+      console.error('Remove error:', error)
+      toast.error(error.message || 'Failed to remove image')
+    } finally {
+      setIsUploadingImage(false)
     }
+  }
 
-    const handleFileSelect = (e) => {
-        const file = e.target.files[0]
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                toast.error('Please select an image file')
-                return
-            }
-
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error('Image size should be less than 5MB')
-                return
-            }
-
-            setSelectedFile(file)
-
-            const reader = new FileReader()
-            reader.onloadend = () => {
-                setImagePreview(reader.result)
-            }
-            reader.readAsDataURL(file)
-        }
+  const getAvatarUrl = () => {
+    if (!user?.avatar) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        user?.name || 'User'
+      )}&background=D4A574&color=fff&size=200`
     }
+    return user.avatar
+  }
 
-    const handleDragOver = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-    }
-
-    const handleDrop = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-
-        const file = e.dataTransfer.files[0]
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                toast.error('Please select an image file')
-                return
-            }
-
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error('Image size should be less than 5MB')
-                return
-            }
-
-            setSelectedFile(file)
-
-            const reader = new FileReader()
-            reader.onloadend = () => {
-                setImagePreview(reader.result)
-            }
-            reader.readAsDataURL(file)
-        }
-    }
-
-    // ✅ Upload to Cloudinary via Backend
-    const handleImageUpload = async () => {
-        if (!selectedFile) {
-            toast.error('Please select an image')
-            return
-        }
-
-        setIsUploadingImage(true)
-
-        try {
-            const token = localStorage.getItem('token')
-
-            if (!token) {
-                throw new Error('Please login again')
-            }
-
-            const formDataToSend = new FormData()
-            formDataToSend.append('avatar', selectedFile)
-
-            const res = await fetch(`${API_URL}/auth/avatar`, {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                body: formDataToSend,
-            })
-
-            const data = await res.json()
-
-            if (!res.ok) {
-                throw new Error(data.message || 'Upload failed')
-            }
-
-            setUser(data.data.user)
-            toast.success('Profile image updated successfully!')
-            closeImageModal()
-
-        } catch (error) {
-            console.error('Upload error:', error)
-            toast.error(error.message || 'Failed to upload image')
-        } finally {
-            setIsUploadingImage(false)
-        }
-    }
-
-    // ✅ Remove from Cloudinary via Backend
-    const handleRemoveAvatar = async () => {
-        const confirmed = window.confirm('Are you sure you want to remove your profile picture?')
-        if (!confirmed) return
-
-        setIsUploadingImage(true)
-
-        try {
-            const token = localStorage.getItem('token')
-
-            if (!token) {
-                throw new Error('Please login again')
-            }
-
-            const res = await fetch(`${API_URL}/auth/avatar`, {
-                method: 'DELETE',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            })
-
-            const data = await res.json()
-
-            if (!res.ok) {
-                throw new Error(data.message || 'Remove failed')
-            }
-
-            setUser(data.data.user)
-            toast.success('Profile image removed!')
-            closeImageModal()
-
-        } catch (error) {
-            console.error('Remove error:', error)
-            toast.error(error.message || 'Failed to remove image')
-        } finally {
-            setIsUploadingImage(false)
-        }
-    }
-
-    const getAvatarUrl = () => {
-        if (!user?.avatar) {
-            return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=D4A574&color=fff&size=200`
-        }
-        return user.avatar
-    }
-
-    return (
+  return (
+    <motion.div
+      variants={pageTransition}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="pt-24 pb-16"
+    >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-            variants={pageTransition}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="pt-24 pb-16"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
         >
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-12"
-                >
-                    <h1 className="text-4xl font-heading font-bold text-chocolate-900 mb-4">
-                        My Profile
-                    </h1>
-                    <p className="text-chocolate-600">
-                        Manage your account information and preferences
-                    </p>
-                </motion.div>
+          <h1 className="text-4xl font-heading font-bold text-chocolate-900 mb-4">
+            My Profile
+          </h1>
+          <p className="text-chocolate-600">
+            Manage your account information and preferences
+          </p>
+        </motion.div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-white rounded-3xl shadow-elegant overflow-hidden"
-                >
-                    <div className="relative h-40 bg-gradient-to-r from-primary-500 via-gold-500 to-chocolate-600">
-                        <div className="absolute -bottom-16 left-8">
-                            <div className="relative group">
-                                <img
-                                    src={getAvatarUrl()}
-                                    alt={user?.name}
-                                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
-                                    onError={(e) => {
-                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=D4A574&color=fff&size=200`
-                                    }}
-                                />
-                                <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={openImageModal}
-                                    className="absolute bottom-2 right-2 w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-primary-600 transition-colors"
-                                >
-                                    <HiOutlineCamera className="w-5 h-5" />
-                                </motion.button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* LEFT — Main profile card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="lg:col-span-2 bg-white rounded-3xl shadow-elegant overflow-hidden"
+          >
+            <div className="relative h-40 bg-gradient-to-r from-primary-500 via-gold-500 to-chocolate-600">
+              <div className="absolute -bottom-16 left-8">
+                <div className="relative group">
+                  <img
+                    src={getAvatarUrl()}
+                    alt={user?.name}
+                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        user?.name || 'User'
+                      )}&background=D4A574&color=fff&size=200`
+                    }}
+                  />
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={openImageModal}
+                    className="absolute bottom-2 right-2 w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-primary-600 transition-colors"
+                  >
+                    <HiOutlineCamera className="w-5 h-5" />
+                  </motion.button>
 
-                                <div
-                                    onClick={openImageModal}
-                                    className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
-                                >
-                                    <HiOutlineCamera className="w-8 h-8 text-white" />
-                                </div>
-                            </div>
-                        </div>
+                  <div
+                    onClick={openImageModal}
+                    className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
+                  >
+                    <HiOutlineCamera className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+              </div>
 
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setIsEditing(!isEditing)}
-                            className="absolute top-4 right-4 px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full flex items-center gap-2 hover:bg-white/30 transition-colors"
-                        >
-                            <HiOutlinePencil className="w-4 h-4" />
-                            Edit Profile
-                        </motion.button>
-                    </div>
-
-                    <div className="pt-20 px-8 pb-8">
-                        <div className="mb-8">
-                            <h2 className="text-2xl font-heading font-bold text-chocolate-900">
-                                {user?.name}
-                            </h2>
-                            <p className="text-chocolate-500">{user?.email}</p>
-                            <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${user?.role === 'admin'
-                                ? 'bg-gold-100 text-gold-700'
-                                : 'bg-primary-100 text-primary-700'
-                                }`}>
-                                {user?.role === 'admin' ? '👑 Admin' : '👤 Member'}
-                            </span>
-                        </div>
-
-                        <form onSubmit={handleSubmit}>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
-                                        <HiOutlineUser className="inline w-4 h-4 mr-2" />
-                                        Full Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        disabled={!isEditing}
-                                        className={`input-field ${!isEditing && 'bg-cream-50 cursor-not-allowed'}`}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
-                                        <HiOutlineMail className="inline w-4 h-4 mr-2" />
-                                        Email Address
-                                    </label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        disabled
-                                        className="input-field bg-cream-50 cursor-not-allowed"
-                                    />
-                                    <p className="text-xs text-chocolate-400 mt-1">Email cannot be changed</p>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
-                                        <HiOutlinePhone className="inline w-4 h-4 mr-2" />
-                                        Phone Number
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        disabled={!isEditing}
-                                        placeholder="Enter phone number"
-                                        className={`input-field ${!isEditing && 'bg-cream-50 cursor-not-allowed'}`}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
-                                        <HiOutlineLocationMarker className="inline w-4 h-4 mr-2" />
-                                        Country
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="address.country"
-                                        value={formData.address.country}
-                                        onChange={handleChange}
-                                        disabled={!isEditing}
-                                        placeholder="Enter country"
-                                        className={`input-field ${!isEditing && 'bg-cream-50 cursor-not-allowed'}`}
-                                    />
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
-                                        Street Address
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="address.street"
-                                        value={formData.address.street}
-                                        onChange={handleChange}
-                                        disabled={!isEditing}
-                                        placeholder="Enter street address"
-                                        className={`input-field ${!isEditing && 'bg-cream-50 cursor-not-allowed'}`}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
-                                        City
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="address.city"
-                                        value={formData.address.city}
-                                        onChange={handleChange}
-                                        disabled={!isEditing}
-                                        placeholder="Enter city"
-                                        className={`input-field ${!isEditing && 'bg-cream-50 cursor-not-allowed'}`}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
-                                        State / Province
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="address.state"
-                                        value={formData.address.state}
-                                        onChange={handleChange}
-                                        disabled={!isEditing}
-                                        placeholder="Enter state"
-                                        className={`input-field ${!isEditing && 'bg-cream-50 cursor-not-allowed'}`}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
-                                        ZIP / Postal Code
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="address.zipCode"
-                                        value={formData.address.zipCode}
-                                        onChange={handleChange}
-                                        disabled={!isEditing}
-                                        placeholder="Enter ZIP code"
-                                        className={`input-field ${!isEditing && 'bg-cream-50 cursor-not-allowed'}`}
-                                    />
-                                </div>
-                            </div>
-
-                            {isEditing && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-cream-200"
-                                >
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        type="button"
-                                        onClick={handleCancel}
-                                        className="flex items-center gap-2 px-6 py-3 border-2 border-chocolate-300 text-chocolate-700 rounded-xl hover:border-chocolate-400 transition-colors"
-                                    >
-                                        <HiOutlineX className="w-5 h-5" />
-                                        Cancel
-                                    </motion.button>
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50"
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                Saving...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <HiOutlineCheck className="w-5 h-5" />
-                                                Save Changes
-                                            </>
-                                        )}
-                                    </motion.button>
-                                </motion.div>
-                            )}
-                        </form>
-                    </div>
-                </motion.div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsEditing(!isEditing)}
+                className="absolute top-4 right-4 px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full flex items-center gap-2 hover:bg-white/30 transition-colors"
+              >
+                <HiOutlinePencil className="w-4 h-4" />
+                Edit Profile
+              </motion.button>
             </div>
 
-            {/* Image Upload Modal */}
-            <AnimatePresence>
-                {isImageModalOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-chocolate-900/60 backdrop-blur-sm"
-                        onClick={closeImageModal}
+            <div className="pt-20 px-8 pb-8">
+              <div className="mb-8">
+                <h2 className="text-2xl font-heading font-bold text-chocolate-900">
+                  {user?.name}
+                </h2>
+                <p className="text-chocolate-500">{user?.email}</p>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                      user?.role === 'admin'
+                        ? 'bg-gold-100 text-gold-700'
+                        : 'bg-primary-100 text-primary-700'
+                    }`}
+                  >
+                    {user?.role === 'admin' ? '👑 Admin' : '👤 Member'}
+                  </span>
+                  {user?.referralCode && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary-100 to-gold-100 text-chocolate-800 border border-primary-200">
+                      🎁 <span className="font-mono">{user.referralCode}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit}>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
+                      <HiOutlineUser className="inline w-4 h-4 mr-2" />
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={`input-field ${
+                        !isEditing && 'bg-cream-50 cursor-not-allowed'
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
+                      <HiOutlineMail className="inline w-4 h-4 mr-2" />
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      disabled
+                      className="input-field bg-cream-50 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-chocolate-400 mt-1">
+                      Email cannot be changed
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
+                      <HiOutlinePhone className="inline w-4 h-4 mr-2" />
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      placeholder="Enter phone number"
+                      className={`input-field ${
+                        !isEditing && 'bg-cream-50 cursor-not-allowed'
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
+                      <HiOutlineLocationMarker className="inline w-4 h-4 mr-2" />
+                      Country
+                    </label>
+                    <input
+                      type="text"
+                      name="address.country"
+                      value={formData.address.country}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      placeholder="Enter country"
+                      className={`input-field ${
+                        !isEditing && 'bg-cream-50 cursor-not-allowed'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
+                      Street Address
+                    </label>
+                    <input
+                      type="text"
+                      name="address.street"
+                      value={formData.address.street}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      placeholder="Enter street address"
+                      className={`input-field ${
+                        !isEditing && 'bg-cream-50 cursor-not-allowed'
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      name="address.city"
+                      value={formData.address.city}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      placeholder="Enter city"
+                      className={`input-field ${
+                        !isEditing && 'bg-cream-50 cursor-not-allowed'
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
+                      State / Province
+                    </label>
+                    <input
+                      type="text"
+                      name="address.state"
+                      value={formData.address.state}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      placeholder="Enter state"
+                      className={`input-field ${
+                        !isEditing && 'bg-cream-50 cursor-not-allowed'
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-chocolate-700 mb-2">
+                      ZIP / Postal Code
+                    </label>
+                    <input
+                      type="text"
+                      name="address.zipCode"
+                      value={formData.address.zipCode}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      placeholder="Enter ZIP code"
+                      className={`input-field ${
+                        !isEditing && 'bg-cream-50 cursor-not-allowed'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {isEditing && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-cream-200"
+                  >
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="button"
+                      onClick={handleCancel}
+                      className="flex items-center gap-2 px-6 py-3 border-2 border-chocolate-300 text-chocolate-700 rounded-xl hover:border-chocolate-400 transition-colors"
                     >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
-                        >
-                            <div className="px-6 py-4 border-b border-cream-100 flex items-center justify-between">
-                                <h2 className="text-xl font-heading font-bold text-chocolate-900">
-                                    Update Profile Picture
-                                </h2>
-                                <motion.button
-                                    whileHover={{ scale: 1.1, rotate: 90 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={closeImageModal}
-                                    className="p-2 hover:bg-cream-100 rounded-full transition-colors"
-                                >
-                                    <HiOutlineX className="w-5 h-5 text-chocolate-500" />
-                                </motion.button>
-                            </div>
-
-                            <div className="p-6">
-                                <div className="flex justify-center mb-6">
-                                    <div className="relative">
-                                        <img
-                                            src={imagePreview || getAvatarUrl()}
-                                            alt="Profile"
-                                            className="w-32 h-32 rounded-full object-cover border-4 border-cream-200"
-                                            onError={(e) => {
-                                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=D4A574&color=fff&size=200`
-                                            }}
-                                        />
-                                        {imagePreview && (
-                                            <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                                <HiOutlineCheck className="w-5 h-5 text-white" />
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div
-                                    onDragOver={handleDragOver}
-                                    onDrop={handleDrop}
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="border-2 border-dashed border-cream-300 rounded-2xl p-8 text-center cursor-pointer hover:border-primary-400 hover:bg-cream-50 transition-all"
-                                >
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleFileSelect}
-                                        className="hidden"
-                                    />
-
-                                    <div className="w-16 h-16 bg-cream-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <HiOutlinePhotograph className="w-8 h-8 text-chocolate-400" />
-                                    </div>
-
-                                    <p className="text-chocolate-700 font-medium mb-1">
-                                        Click to upload or drag and drop
-                                    </p>
-                                    <p className="text-sm text-chocolate-400">
-                                        PNG, JPG or GIF (max. 5MB)
-                                    </p>
-
-                                    {selectedFile && (
-                                        <div className="mt-4 p-3 bg-green-50 rounded-xl">
-                                            <p className="text-sm text-green-700 font-medium">
-                                                ✓ {selectedFile.name}
-                                            </p>
-                                            <p className="text-xs text-green-600">
-                                                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="flex flex-col gap-3 mt-6">
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={handleImageUpload}
-                                        disabled={!selectedFile || isUploadingImage}
-                                        className="w-full py-3 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                    >
-                                        {isUploadingImage ? (
-                                            <>
-                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                Uploading to Cloud...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <HiOutlineCheck className="w-5 h-5" />
-                                                Save New Picture
-                                            </>
-                                        )}
-                                    </motion.button>
-
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={handleRemoveAvatar}
-                                        disabled={isUploadingImage}
-                                        className="w-full py-3 border-2 border-red-300 text-red-600 font-medium rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                                    >
-                                        <HiOutlineTrash className="w-5 h-5" />
-                                        Remove Current Picture
-                                    </motion.button>
-
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={closeImageModal}
-                                        className="w-full py-3 text-chocolate-600 font-medium hover:text-chocolate-800 transition-colors"
-                                    >
-                                        Cancel
-                                    </motion.button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
+                      <HiOutlineX className="w-5 h-5" />
+                      Cancel
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <HiOutlineCheck className="w-5 h-5" />
+                          Save Changes
+                        </>
+                      )}
+                    </motion.button>
+                  </motion.div>
                 )}
-            </AnimatePresence>
-        </motion.div>
-    )
+              </form>
+            </div>
+          </motion.div>
+
+          {/* RIGHT SIDEBAR — Referral Card + stats */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-6"
+          >
+            <ReferralCard />
+
+            <div className="bg-white rounded-3xl shadow-elegant p-6">
+              <h3 className="font-heading font-bold text-chocolate-900 mb-4 flex items-center gap-2">
+                📊 Quick Stats
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
+                  <span className="text-chocolate-600 text-sm">Member Since</span>
+                  <span className="font-bold text-chocolate-900 text-sm">
+                    {user?.createdAt
+                      ? new Date(user.createdAt).toLocaleDateString('en-IN', {
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                      : '—'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
+                  <span className="text-chocolate-600 text-sm">Friends Referred</span>
+                  <span className="font-bold text-chocolate-900 text-sm">
+                    {user?.referralStats?.totalReferred || 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
+                  <span className="text-chocolate-600 text-sm">Rewards Unlocked</span>
+                  <span className="font-bold text-chocolate-900 text-sm">
+                    {user?.referralStats?.totalRewarded || 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
+                  <span className="text-chocolate-600 text-sm">Rewards Earned</span>
+                  <span className="font-bold text-green-600 text-sm">
+                    ₹{user?.referralStats?.totalEarned || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Image Upload Modal */}
+      <AnimatePresence>
+        {isImageModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-chocolate-900/60 backdrop-blur-sm"
+            onClick={closeImageModal}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              <div className="px-6 py-4 border-b border-cream-100 flex items-center justify-between">
+                <h2 className="text-xl font-heading font-bold text-chocolate-900">
+                  Update Profile Picture
+                </h2>
+                <motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={closeImageModal}
+                  className="p-2 hover:bg-cream-100 rounded-full transition-colors"
+                >
+                  <HiOutlineX className="w-5 h-5 text-chocolate-500" />
+                </motion.button>
+              </div>
+
+              <div className="p-6">
+                <div className="flex justify-center mb-6">
+                  <div className="relative">
+                    <img
+                      src={imagePreview || getAvatarUrl()}
+                      alt="Profile"
+                      className="w-32 h-32 rounded-full object-cover border-4 border-cream-200"
+                      onError={(e) => {
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          user?.name || 'User'
+                        )}&background=D4A574&color=fff&size=200`
+                      }}
+                    />
+                    {imagePreview && (
+                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <HiOutlineCheck className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-cream-300 rounded-2xl p-8 text-center cursor-pointer hover:border-primary-400 hover:bg-cream-50 transition-all"
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+
+                  <div className="w-16 h-16 bg-cream-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <HiOutlinePhotograph className="w-8 h-8 text-chocolate-400" />
+                  </div>
+
+                  <p className="text-chocolate-700 font-medium mb-1">
+                    Click to upload or drag and drop
+                  </p>
+                  <p className="text-sm text-chocolate-400">
+                    PNG, JPG or GIF (max. 5MB)
+                  </p>
+
+                  {selectedFile && (
+                    <div className="mt-4 p-3 bg-green-50 rounded-xl">
+                      <p className="text-sm text-green-700 font-medium">
+                        ✓ {selectedFile.name}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-3 mt-6">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleImageUpload}
+                    disabled={!selectedFile || isUploadingImage}
+                    className="w-full py-3 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isUploadingImage ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Uploading to Cloud...
+                      </>
+                    ) : (
+                      <>
+                        <HiOutlineCheck className="w-5 h-5" />
+                        Save New Picture
+                      </>
+                    )}
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleRemoveAvatar}
+                    disabled={isUploadingImage}
+                    className="w-full py-3 border-2 border-red-300 text-red-600 font-medium rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <HiOutlineTrash className="w-5 h-5" />
+                    Remove Current Picture
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={closeImageModal}
+                    className="w-full py-3 text-chocolate-600 font-medium hover:text-chocolate-800 transition-colors"
+                  >
+                    Cancel
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
 }
 
 export default Profile

@@ -8,32 +8,60 @@ import {
   HiOutlinePhotograph,
   HiOutlineSearch,
   HiOutlineFilter,
+  HiOutlinePlay,
 } from 'react-icons/hi'
 import api from '../utils/api'
 
 const CATEGORIES = ['All', 'Workshop', 'Testimonials']
 
-// ─── Lightbox (browses all images in a single event) ─────────────────────────
+// ─── Helper: Detect if a URL is a video ──────────────────────────────────────
+const isVideo = (url) => {
+  if (!url) return false
+  return /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(url) || url.includes('/video/')
+}
+
+// ─── Media Component: Renders either image OR muted video ────────────────────
+const Media = ({ src, alt, className = '', autoPlay = false }) => {
+  if (isVideo(src)) {
+    return (
+      <video
+        src={src}
+        muted
+        autoPlay={autoPlay}
+        loop
+        playsInline
+        preload="metadata"
+        className={className}
+      />
+    )
+  }
+  return <img src={src} alt={alt || ''} className={className} />
+}
+
+// ─── Lightbox (browses all media in a single event) ─────────────────────────
 const Lightbox = ({ event, startIndex, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(startIndex)
-  const images = event.images || []
+  const media = event.images || []
 
-  const prevImage = () =>
-    setCurrentIndex((i) => (i - 1 + images.length) % images.length)
-  const nextImage = () =>
-    setCurrentIndex((i) => (i + 1) % images.length)
+  const prevMedia = () =>
+    setCurrentIndex((i) => (i - 1 + media.length) % media.length)
+  const nextMedia = () =>
+    setCurrentIndex((i) => (i + 1) % media.length)
 
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === 'Escape') onClose()
-      if (e.key === 'ArrowLeft') prevImage()
-      if (e.key === 'ArrowRight') nextImage()
+      if (e.key === 'ArrowLeft') prevMedia()
+      if (e.key === 'ArrowRight') nextMedia()
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [onClose])
 
-  if (!images.length) return null
+  if (!media.length) return null
+
+  const currentSrc = media[currentIndex]
+  const currentIsVideo = isVideo(currentSrc)
 
   return (
     <AnimatePresence>
@@ -60,31 +88,48 @@ const Lightbox = ({ event, startIndex, onClose }) => {
           </button>
 
           <div className="flex flex-col md:flex-row">
-            {/* Image area */}
+            {/* Media area */}
             <div className="relative md:w-2/3 bg-black flex items-center justify-center min-h-[300px] md:min-h-[500px]">
               <AnimatePresence mode="wait">
-                <motion.img
+                <motion.div
                   key={currentIndex}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.25 }}
-                  src={images[currentIndex]}
-                  alt={event.title}
-                  className="w-full h-full object-contain max-h-[60vh] md:max-h-[80vh]"
-                />
+                  className="w-full h-full flex items-center justify-center"
+                >
+                  {currentIsVideo ? (
+                    <video
+                      key={currentSrc}
+                      src={currentSrc}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      controls
+                      className="w-full h-full object-contain max-h-[60vh] md:max-h-[80vh]"
+                    />
+                  ) : (
+                    <img
+                      src={currentSrc}
+                      alt={event.title}
+                      className="w-full h-full object-contain max-h-[60vh] md:max-h-[80vh]"
+                    />
+                  )}
+                </motion.div>
               </AnimatePresence>
 
-              {images.length > 1 && (
+              {media.length > 1 && (
                 <>
                   <button
-                    onClick={prevImage}
+                    onClick={prevMedia}
                     className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-2 transition"
                   >
                     <HiOutlineChevronLeft className="w-6 h-6" />
                   </button>
                   <button
-                    onClick={nextImage}
+                    onClick={nextMedia}
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-2 transition"
                   >
                     <HiOutlineChevronRight className="w-6 h-6" />
@@ -94,7 +139,8 @@ const Lightbox = ({ event, startIndex, onClose }) => {
 
               {/* Counter */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full">
-                {currentIndex + 1} / {images.length}
+                {currentIndex + 1} / {media.length}
+                {currentIsVideo && ' 🎬'}
               </div>
             </div>
 
@@ -129,31 +175,49 @@ const Lightbox = ({ event, startIndex, onClose }) => {
               </div>
 
               {/* Thumbnail Strip (browse within event) */}
-              {images.length > 1 && (
+              {media.length > 1 && (
                 <div className="mt-4 pt-4 border-t border-chocolate-700">
                   <p className="text-chocolate-400 text-xs uppercase tracking-wider mb-2">
-                    All Photos ({images.length})
+                    All Media ({media.length})
                   </p>
                   <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-chocolate-700">
-                    {images.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentIndex(idx)}
-                        className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition
-                          ${
-                            currentIndex === idx
-                              ? 'border-gold-400 scale-105'
-                              : 'border-transparent opacity-60 hover:opacity-100'
-                          }
-                        `}
-                      >
-                        <img
-                          src={img}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                    ))}
+                    {media.map((item, idx) => {
+                      const itemIsVideo = isVideo(item)
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => setCurrentIndex(idx)}
+                          className={`relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition
+                            ${
+                              currentIndex === idx
+                                ? 'border-gold-400 scale-105'
+                                : 'border-transparent opacity-60 hover:opacity-100'
+                            }
+                          `}
+                        >
+                          {itemIsVideo ? (
+                            <>
+                              <video
+                                src={item}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <HiOutlinePlay className="w-4 h-4 text-white" />
+                              </div>
+                            </>
+                          ) : (
+                            <img
+                              src={item}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -167,12 +231,43 @@ const Lightbox = ({ event, startIndex, onClose }) => {
 
 // ─── Event Card (one card per event) ──────────────────────────────────────────
 const EventCard = ({ event, onOpen }) => {
-  const images = event.images || []
-  const imageCount = images.length
+  const media = event.images || []
+  const mediaCount = media.length
+  const videoCount = media.filter(isVideo).length
 
-  // Decide grid layout based on number of images
-  const renderImageGrid = () => {
-    if (imageCount === 0) {
+  // Reusable media tile (image or auto-playing muted video)
+  const MediaTile = ({ src, withPlayIcon = false }) => {
+    const itemIsVideo = isVideo(src)
+    return (
+      <div className="relative w-full h-full">
+        {itemIsVideo ? (
+          <video
+            src={src}
+            muted
+            autoPlay
+            loop
+            playsInline
+            preload="metadata"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <img
+            src={src}
+            alt=""
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        )}
+        {withPlayIcon && itemIsVideo && (
+          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full p-1.5">
+            <HiOutlinePlay className="w-3 h-3 text-white" />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const renderMediaGrid = () => {
+    if (mediaCount === 0) {
       return (
         <div className="aspect-[4/3] bg-cream-100 flex items-center justify-center">
           <HiOutlinePhotograph className="w-12 h-12 text-chocolate-300" />
@@ -180,89 +275,57 @@ const EventCard = ({ event, onOpen }) => {
       )
     }
 
-    if (imageCount === 1) {
+    if (mediaCount === 1) {
       return (
         <div className="aspect-[4/3] overflow-hidden">
-          <img
-            src={images[0]}
-            alt={event.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
+          <MediaTile src={media[0]} withPlayIcon />
         </div>
       )
     }
 
-    if (imageCount === 2) {
+    if (mediaCount === 2) {
       return (
         <div className="grid grid-cols-2 gap-0.5 aspect-[4/3]">
-          {images.slice(0, 2).map((img, i) => (
+          {media.slice(0, 2).map((item, i) => (
             <div key={i} className="overflow-hidden">
-              <img
-                src={img}
-                alt=""
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
+              <MediaTile src={item} withPlayIcon />
             </div>
           ))}
         </div>
       )
     }
 
-    if (imageCount === 3) {
+    if (mediaCount === 3) {
       return (
         <div className="grid grid-cols-2 gap-0.5 aspect-[4/3]">
           <div className="overflow-hidden row-span-2">
-            <img
-              src={images[0]}
-              alt=""
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
+            <MediaTile src={media[0]} withPlayIcon />
           </div>
           <div className="overflow-hidden">
-            <img
-              src={images[1]}
-              alt=""
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
+            <MediaTile src={media[1]} withPlayIcon />
           </div>
           <div className="overflow-hidden">
-            <img
-              src={images[2]}
-              alt=""
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
+            <MediaTile src={media[2]} withPlayIcon />
           </div>
         </div>
       )
     }
 
-    // 4+ images: collage style with "+N more" overlay
+    // 4+ media: collage with "+N more" overlay
     return (
       <div className="grid grid-cols-2 gap-0.5 aspect-[4/3]">
         <div className="overflow-hidden row-span-2">
-          <img
-            src={images[0]}
-            alt=""
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
+          <MediaTile src={media[0]} withPlayIcon />
         </div>
         <div className="overflow-hidden">
-          <img
-            src={images[1]}
-            alt=""
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
+          <MediaTile src={media[1]} withPlayIcon />
         </div>
         <div className="overflow-hidden relative">
-          <img
-            src={images[2]}
-            alt=""
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          {imageCount > 3 && (
+          <MediaTile src={media[2]} withPlayIcon />
+          {mediaCount > 3 && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
               <span className="text-white text-2xl font-bold">
-                +{imageCount - 3}
+                +{mediaCount - 3}
               </span>
             </div>
           )}
@@ -279,9 +342,9 @@ const EventCard = ({ event, onOpen }) => {
       className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
       onClick={onOpen}
     >
-      {/* Image collage */}
+      {/* Media collage */}
       <div className="relative">
-        {renderImageGrid()}
+        {renderMediaGrid()}
 
         {/* Category badge */}
         <div className="absolute top-3 left-3">
@@ -298,17 +361,17 @@ const EventCard = ({ event, onOpen }) => {
           </span>
         </div>
 
-        {/* Photo count badge */}
-        {imageCount > 1 && (
+        {/* Media count badge */}
+        {mediaCount > 1 && (
           <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
-            📷 {imageCount}
+            {videoCount > 0 ? `🎬 ${videoCount} · 📷 ${mediaCount - videoCount}` : `📷 ${mediaCount}`}
           </div>
         )}
 
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-chocolate-900/0 group-hover:bg-chocolate-900/40 transition-all duration-300 flex items-end justify-center pb-4 pointer-events-none">
           <span className="opacity-0 group-hover:opacity-100 transition bg-white/95 text-chocolate-800 text-xs font-bold px-4 py-2 rounded-full">
-            View {imageCount > 1 ? `all ${imageCount} photos` : 'photo'}
+            View {mediaCount > 1 ? `all ${mediaCount}` : 'media'}
           </span>
         </div>
       </div>
@@ -352,7 +415,6 @@ const Gallery = () => {
   const [visibleCount, setVisibleCount] = useState(9)
   const loaderRef = useRef(null)
 
-  // Fetch events from API (no flattening — keep events as-is)
   useEffect(() => {
     const fetchGallery = async () => {
       try {
@@ -377,7 +439,6 @@ const Gallery = () => {
     fetchGallery()
   }, [])
 
-  // Filter events
   const filtered = events.filter((ev) => {
     const matchCat = activeCategory === 'All' || ev.category === activeCategory
     const matchSearch =
@@ -390,13 +451,11 @@ const Gallery = () => {
 
   const visible = filtered.slice(0, visibleCount)
 
-  // Compute total photo count
-  const totalPhotos = events.reduce(
+  const totalMedia = events.reduce(
     (sum, ev) => sum + (ev.images?.length || 0),
     0
   )
 
-  // Infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -462,7 +521,7 @@ const Gallery = () => {
           >
             {[
               { label: 'Total Events', value: events.length },
-              { label: 'Total Photos', value: totalPhotos },
+              { label: 'Total Media', value: totalMedia },
               {
                 label: 'Workshops',
                 value: events.filter((e) => e.category === 'Workshop').length,
@@ -651,9 +710,7 @@ const Gallery = () => {
                 👍 Facebook
               </a>
             </div>
-            <p className="text-gold-400 font-semibold mt-6 text-lg tracking-wide">
-              #YourBrandName #HandcraftedWithLove
-            </p>
+           
           </motion.div>
         </div>
       </section>

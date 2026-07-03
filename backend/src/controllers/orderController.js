@@ -2,6 +2,7 @@ import Order from '../models/Order.js'
 import Cart from '../models/Cart.js'
 import Post from '../models/Post.js'
 import User from '../models/User.js'
+import Coupon from '../models/Coupon.js'
 import Razorpay from 'razorpay'
 import crypto from 'crypto'
 import sendEmail from '../utils/sendEmail.js'
@@ -54,6 +55,35 @@ export const createRazorpayOrder = async (req, res) => {
   }
 }
 
+// GET /api/orders/check-referral-discount
+export const checkReferralDiscount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+
+    if (!user?.referredBy) {
+      return res.json({ eligible: false })
+    }
+
+    const previousOrders = await Order.countDocuments({
+      user: req.user._id,
+      orderStatus: { $ne: 'cancelled' },
+    })
+
+    if (previousOrders === 0) {
+      return res.json({
+        eligible: true,
+        percentage: 5,
+        message: '🎁 You get 5% off on your first order (referral bonus)!',
+      })
+    }
+
+    res.json({ eligible: false })
+  } catch (err) {
+    console.error('❌ checkReferralDiscount error:', err.message)
+    res.status(500).json({ success: false, message: err.message })
+  }
+}
+
 // POST /api/orders/checkout
 export const checkout = async (req, res) => {
   try {
@@ -64,18 +94,21 @@ export const checkout = async (req, res) => {
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
+      couponCode,
     } = req.body
 
+    console.log('═══════════════════════════════════════════')
     console.log('🛒 Checkout request received')
     console.log('  user:', req.user?._id)
-    console.log('  items:', items?.length)
+    console.log('  items count:', items?.length)
     console.log('  paymentMethod:', paymentMethod)
+    console.log('  coupon:', couponCode)
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'No items' })
     }
 
-    // ⭐ Verify Razorpay signature
+    // Verify Razorpay signature
     if (paymentMethod === 'RAZORPAY') {
       console.log('🔐 Verifying payment signature...')
 
@@ -88,7 +121,6 @@ export const checkout = async (req, res) => {
       }
 
       if (!process.env.RAZORPAY_KEY_SECRET) {
-        console.error('❌ RAZORPAY_KEY_SECRET not set')
         return res.status(500).json({
           success: false,
           message: 'Server configuration error',
@@ -103,8 +135,6 @@ export const checkout = async (req, res) => {
 
       if (expectedSignature !== razorpaySignature) {
         console.error('❌ Signature mismatch')
-        console.error('  expected:', expectedSignature)
-        console.error('  received:', razorpaySignature)
         return res.status(400).json({
           success: false,
           message: 'Payment verification failed - signature mismatch',
@@ -114,13 +144,17 @@ export const checkout = async (req, res) => {
       console.log('✅ Signature verified')
     }
 
-    // ⭐ Build order items
+    // Build order items
     let orderItems = []
     let subtotal = 0
 
+    console.log('📦 Building order items:')
     for (const item of items) {
       const post = await Post.findById(item.postId)
-      if (!post) continue
+      if (!post) {
+        console.warn(`  ⚠️ Post not found: ${item.postId}`)
+        continue
+      }
       if (post.stock < item.quantity) {
         return res.status(400).json({
           success: false,
@@ -128,29 +162,97 @@ export const checkout = async (req, res) => {
         })
       }
 
-      orderItems.push({
+      // ⭐ Ensure category is lowercase & requiresCustomization is boolean
+      const orderItem = {
         post: post._id,
         title: post.title,
         price: post.price,
         quantity: item.quantity,
-        image: post.images[0]?.url,
-        category: post.category,
-        requiresCustomization: post.requiresCustomization,
+        image: post.images[0]?.url || '',
+        category: (post.category || '').toString().toLowerCase().trim(),
+        requiresCustomization: post.requiresCustomization === true,
+      }
+
+      console.log(`  • "${orderItem.title}"`, {
+        category: orderItem.category,
+        requiresCustomization: orderItem.requiresCustomization,
       })
+
+      orderItems.push(orderItem)
 
       subtotal += post.price * item.quantity
       post.stock -= item.quantity
       await post.save()
     }
 
-    // ⭐ Calculate shipping on backend (don't trust frontend)
+    // Calculate shipping
     const shippingResult = calculateShipping(shippingAddress.pincode, subtotal)
     const shippingCost = shippingResult.cost
-    const totalAmount = subtotal + shippingCost
 
+    // Apply coupon if provided
+    let couponDiscount = 0
+    let couponData = null
+
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() })
+      if (coupon) {
+        const check = coupon.isValidFor(req.user, subtotal)
+        if (check.valid) {
+          couponDiscount = coupon.calculateDiscount(subtotal)
+          couponData = {
+            code: coupon.code,
+            discountAmount: Math.round(couponDiscount),
+            couponId: coupon._id,
+          }
+          coupon.usedCount += 1
+          coupon.usedBy.push({ user: req.user._id, order: null })
+          await coupon.save()
+          console.log(`✅ Coupon applied: ${coupon.code} → -₹${couponDiscount}`)
+        } else {
+          console.warn(`⚠️ Coupon invalid: ${check.reason}`)
+        }
+      }
+    }
+
+    // AUTO 5% off for referred users' first order
+    const currentUser = await User.findById(req.user._id)
+    const isReferredUser = !!currentUser.referredBy
+
+    let referralDiscount = 0
+    let referralDiscountData = null
+
+    if (isReferredUser && !couponData) {
+      const previousOrders = await Order.countDocuments({
+        user: req.user._id,
+        orderStatus: { $ne: 'cancelled' },
+      })
+
+      if (previousOrders === 0) {
+        referralDiscount = Math.round(subtotal * 0.05)
+        referralDiscountData = {
+          code: 'REFERRAL5',
+          discountAmount: referralDiscount,
+        }
+        console.log(`🎁 Auto referral discount applied: 5% off → -₹${referralDiscount}`)
+      }
+    }
+
+    const totalDiscount = couponDiscount + referralDiscount
+    const totalAmount = Math.max(0, subtotal - totalDiscount + shippingCost)
+
+    // ⭐ CHECK CUSTOMIZATION with detailed logging
     const hasCustomization = orderItems.some(
-      (item) => item.requiresCustomization || item.category === 'gifting'
+      (item) => item.requiresCustomization === true || item.category === 'gifting'
     )
+
+    console.log('🎨 Customization check:')
+    console.log('  hasCustomization:', hasCustomization)
+    console.log('  Items breakdown:')
+    orderItems.forEach((i, idx) => {
+      console.log(`    ${idx + 1}. ${i.title}: category="${i.category}", requiresCustomization=${i.requiresCustomization}`)
+    })
+
+    const referralApplied = !!currentUser.referredBy
 
     const order = await Order.create({
       user: req.user._id,
@@ -166,36 +268,64 @@ export const checkout = async (req, res) => {
       razorpayOrderId,
       razorpayPaymentId,
       hasCustomization,
+      coupon: couponData || referralDiscountData,
+      referralApplied,
+      referralDiscount,
     })
 
     console.log('✅ Order created:', order._id)
+    console.log('  Saved hasCustomization:', order.hasCustomization)
+    console.log('═══════════════════════════════════════════')
 
-    // Clear cart (don't block on this either)
+    // Update coupon record with actual order ID
+    if (couponData) {
+      await Coupon.updateOne(
+        {
+          _id: couponData.couponId,
+          'usedBy.order': null,
+          'usedBy.user': req.user._id,
+        },
+        { $set: { 'usedBy.$.order': order._id } }
+      )
+    }
+
+    // Clear cart
     Cart.findOneAndUpdate({ user: req.user._id }, { items: [] })
       .then(() => console.log('✅ Cart cleared'))
       .catch((err) => console.error('❌ Cart clear failed:', err.message))
 
-    // ⭐ SEND RESPONSE IMMEDIATELY — don't wait for emails
+    // Send response immediately
     res.status(201).json({ success: true, order })
 
-    // 📧 Send emails AFTER response (fire & forget — never blocks)
+    // ⭐ Trigger referral reward if paid + user was referred
+    if (order.paymentStatus === 'paid' && referralApplied) {
+      ;(async () => {
+        try {
+          console.log(`🎁 Triggering referral reward for new paid order ${order._id}`)
+          const { rewardReferrer } = await import('./referralController.js')
+          await rewardReferrer(order._id)
+        } catch (err) {
+          console.error('❌ Referral reward failed:', err.message)
+        }
+      })()
+    }
+
+    // Send emails after response
     sendOrderEmails(order, req.user).catch((err) => {
       console.error('❌ Email background task failed:', err.message)
     })
   } catch (err) {
     console.error('❌ Checkout error:', err)
-    // Only send error response if we haven't already responded
     if (!res.headersSent) {
       res.status(500).json({ success: false, message: err.message })
     }
   }
 }
 
-// 📧 Helper: Send order emails in background (never blocks API response)
+// Helper: Send order emails in background
 const sendOrderEmails = async (order, user) => {
   const orderId = order._id.toString().slice(-8).toUpperCase()
 
-  // Customer email
   try {
     await sendEmail({
       to: user.email,
@@ -207,7 +337,6 @@ const sendOrderEmails = async (order, user) => {
     console.error('❌ Customer email failed:', err.message)
   }
 
-  // Admin email
   if (process.env.ADMIN_EMAIL) {
     try {
       await sendEmail({
@@ -254,15 +383,12 @@ export const cancelOrder = async (req, res) => {
     order.orderStatus = 'cancelled'
     await order.save()
 
-    // Restore stock
     for (const item of order.items) {
       await Post.findByIdAndUpdate(item.post, { $inc: { stock: item.quantity } })
     }
 
-    // Send response first, email after
     res.json({ success: true, order })
 
-    // 📧 Cancellation email (fire & forget)
     ;(async () => {
       try {
         const user = await User.findById(order.user)
@@ -297,13 +423,12 @@ export const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(req.params.id)
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' })
 
+    const previousStatus = order.orderStatus
     order.orderStatus = status
     await order.save()
 
-    // Send response first, email after
     res.json({ success: true, order })
 
-    // 📧 Status update email (fire & forget)
     ;(async () => {
       try {
         const user = await User.findById(order.user)
@@ -327,6 +452,17 @@ export const updateOrderStatus = async (req, res) => {
         if (subject) {
           await sendEmail({ to: user.email, subject, html })
           console.log(`✅ ${status} email sent to ${user.email}`)
+        }
+
+        // Trigger referral reward when delivered
+        if (status === 'delivered' && previousStatus !== 'delivered') {
+          try {
+            console.log(`🎁 Triggering referral reward for order ${order._id}`)
+            const { rewardReferrer } = await import('./referralController.js')
+            await rewardReferrer(order._id)
+          } catch (err) {
+            console.error('❌ Referral reward failed:', err.message)
+          }
         }
       } catch (err) {
         console.error('❌ Status email failed:', err.message)

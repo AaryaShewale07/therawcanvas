@@ -25,20 +25,21 @@ import newsletterRoutes from './src/routes/newsletterRoutes.js'
 import reviewRoutes from './src/routes/reviewRoutes.js'
 import galleryRoutes from './src/routes/galleryRoutes.js'
 import bannerRoutes from './src/routes/bannerRoutes.js'
+import heroVideoRoutes from './src/routes/heroVideosRoutes.js'
+import commissionRoutes from './src/routes/commissionsRoutes.js'
+import couponRoutes from './src/routes/couponRoutes.js'
+import referralRoutes from './src/routes/referralRoutes.js'
 
-
-// ─── __dirname fix for ES Modules ────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const app = express()
-app.set('trust proxy', 1);
+app.set('trust proxy', 1)
 
 connectDB()
 
 // ============ SECURITY MIDDLEWARE ============
 
-// 1. Helmet
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -46,7 +47,6 @@ app.use(
   })
 )
 
-// 2. CORS
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
@@ -55,38 +55,44 @@ app.use(
   })
 )
 
-// 3. Body Parser
-app.use(express.json({ limit: '50mb' }))
-app.use(express.urlencoded({ extended: true, limit: '50mb' }))
+// ✅ INCREASED body parser limit to 100mb for video uploads
+app.use(express.json({ limit: '100mb' }))
+app.use(express.urlencoded({ extended: true, limit: '100mb' }))
 
-// 4. NoSQL Injection Protection
 app.use(mongoSanitize())
-
-// 5. XSS Protection
 app.use(xss())
-
-// 6. HTTP Parameter Pollution Protection
 app.use(
   hpp({
     whitelist: ['category', 'tags'],
   })
 )
 
-// 7. Rate Limiting
+// ⭐ FIXED — Development-friendly rate limits with skip for cart/wishlist
+const isDev = process.env.NODE_ENV === 'development'
+
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000,          // 15 minutes
+  max: isDev ? 10000 : 500,          // Much higher in dev, 500 in prod
   message: {
     success: false,
     message: 'Too many requests, please try again later',
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // ⭐ Skip rate limiting for common user actions
+  skip: (req) => {
+    return (
+      req.path.startsWith('/api/cart') ||
+      req.path.startsWith('/api/wishlist') ||
+      req.path.startsWith('/api/coupons/validate') ||
+      req.path.startsWith('/api/orders/check-referral-discount')
+    )
+  },
 })
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isDev ? 100 : 10,             // 100 in dev, 10 in prod
   message: {
     success: false,
     message: 'Too many login attempts, please try again in 15 minutes',
@@ -100,7 +106,6 @@ app.use('/api/auth/register', authLimiter)
 app.use('/api/auth/forgot-password', authLimiter)
 
 // ============ STATIC FILES ============
-// Serves uploaded images at /uploads/gallery/filename.jpg
 app.use(
   '/uploads',
   (req, res, next) => {
@@ -110,8 +115,8 @@ app.use(
   },
   express.static(path.join(__dirname, 'public', 'uploads'))
 )
-// ============ ROUTES ============
 
+// ============ ROUTES ============
 app.use('/api/auth', authRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/posts', postRoutes)
@@ -125,13 +130,16 @@ app.use('/api/newsletter', newsletterRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/gallery', galleryRoutes)
 app.use('/api/banners', bannerRoutes)
+app.use('/api/hero-videos', heroVideoRoutes)
+app.use('/api/commissions', commissionRoutes)
+app.use('/api/coupons', couponRoutes)
+app.use('/api/referrals', referralRoutes)
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working', timestamp: new Date().toISOString() })
 })
 
 // ============ ERROR HANDLER ============
-
 app.use((err, req, res, next) => {
   const isProduction = process.env.NODE_ENV === 'production'
 
@@ -141,13 +149,13 @@ app.use((err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'File too large. Maximum size is 10MB per image',
+        message: 'File too large. Maximum size is 100MB per file',
       })
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
-        message: 'Too many files. Maximum 20 images per event',
+        message: 'Too many files. Maximum 20 files per event',
       })
     }
     return res.status(400).json({

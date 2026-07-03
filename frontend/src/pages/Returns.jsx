@@ -68,9 +68,7 @@ const Returns = () => {
             <ul className="space-y-2 text-chocolate-700">
               <li className="flex gap-2"><span className="text-green-500">✓</span> Damaged or broken items (shown in unboxing video)</li>
               <li className="flex gap-2"><span className="text-green-500">✓</span> Wrong items delivered (shown in unboxing video)</li>
-              <li className="flex gap-2"><span className="text-green-500">✓</span> Missing items from order (shown in unboxing video)</li>
-              <li className="flex gap-2"><span className="text-green-500">✓</span> Order not delivered within promised time</li>
-              <li className="flex gap-2"><span className="text-green-500">✓</span> Quality issues visible at unboxing</li>
+              <li className="flex gap-2"><span className="text-green-500">✓</span> Missing items from order (shown in unboxing video)</li>              <li className="flex gap-2"><span className="text-green-500">✓</span> Quality issues visible at unboxing</li>
             </ul>
           </motion.div>
 

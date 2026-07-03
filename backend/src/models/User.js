@@ -17,15 +17,19 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function () {
+        return this.authProvider === 'local'
+      },
       minlength: [8, 'Password must be at least 8 characters'],
       validate: {
         validator: function (v) {
-          // Only validate on NEW/modified passwords, not on already-hashed ones
+          if (this.authProvider === 'google') return true
           if (!this.isModified('password')) return true
+          if (!v) return false
           return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v)
         },
-        message: 'Password must contain uppercase, lowercase, number, and special character (@$!%*?&)',
+        message:
+          'Password must contain uppercase, lowercase, number, and special character (@$!%*?&)',
       },
       select: false,
     },
@@ -85,6 +89,33 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    googleId: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
+    },
+    // ⭐ Referral system fields
+    referralCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      uppercase: true,
+    },
+    referredBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    referralStats: {
+      totalReferred: { type: Number, default: 0 },
+      totalRewarded: { type: Number, default: 0 },
+      totalEarned: { type: Number, default: 0 },
+    },
   },
   {
     timestamps: true,
@@ -93,7 +124,7 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     return next()
   }
   const salt = await bcrypt.genSalt(10)
@@ -101,14 +132,43 @@ userSchema.pre('save', async function (next) {
   next()
 })
 
-// Compare password
+// ⭐ Auto-generate PROFESSIONAL referral code (TRC + 6 chars: letters + numbers)
+userSchema.pre('save', async function (next) {
+  if (this.isNew && !this.referralCode) {
+    const generateCode = () => {
+      // Safe chars only — no 0/O/1/I to avoid confusion
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+      const prefix = 'TRC' // The Raw Canvas
+      let code = prefix
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length))
+      }
+      return code
+    }
+
+    // Ensure uniqueness (max 10 attempts)
+    let code
+    let exists = true
+    let attempts = 0
+    while (exists && attempts < 10) {
+      code = generateCode()
+      exists = await mongoose.model('User').findOne({ referralCode: code })
+      attempts++
+    }
+    this.referralCode = code
+  }
+  next()
+})
+
 userSchema.methods.comparePassword = async function (enteredPassword) {
+  if (!this.password) return false
   return await bcrypt.compare(enteredPassword, this.password)
 }
 
-// Get default avatar
 userSchema.methods.getDefaultAvatar = function () {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(this.name || 'User')}&background=D4A574&color=fff&size=200`
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    this.name || 'User'
+  )}&background=D4A574&color=fff&size=200`
 }
 
 const User = mongoose.model('User', userSchema)

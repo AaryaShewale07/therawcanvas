@@ -9,8 +9,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@getbrevo/brevo": "^5.0.4",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
-    "multer-storage-cloudinary": "^4.0.0"
+    "multer": "^2.2.0",
+    "multer-storage-cloudinary": "^4.0.0",
+    "streamifier": "^0.1.1"
   }
 }

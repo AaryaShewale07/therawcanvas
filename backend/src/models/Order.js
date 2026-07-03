@@ -5,7 +5,7 @@ const orderSchema = new mongoose.Schema(
     orderNumber: {
       type: String,
       unique: true,
-      sparse: true,  // ⭐ Allows multiple nulls (won't conflict)
+      sparse: true,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -19,8 +19,8 @@ const orderSchema = new mongoose.Schema(
         price: Number,
         quantity: Number,
         image: String,
-        category: String,
-        requiresCustomization: Boolean,
+        category: { type: String, default: '' },              // ⭐ Explicit default
+        requiresCustomization: { type: Boolean, default: false }, // ⭐ Explicit default
       },
     ],
     totalAmount: { type: Number, required: true },
@@ -65,11 +65,25 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    // Coupon fields
+    coupon: {
+      code: String,
+      discountAmount: { type: Number, default: 0 },
+      couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
+    },
+    // Referral tracking
+    referralApplied: {
+      type: Boolean,
+      default: false,
+    },
+    referralDiscount: {           // ⭐ NEW — Track auto-referral discount
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 )
 
-// ⭐ Auto-generate orderNumber before saving
 orderSchema.pre('save', async function (next) {
   if (this.isNew && !this.orderNumber) {
     const count = await mongoose.model('Order').countDocuments()

@@ -33,21 +33,46 @@ const storage = multer.diskStorage({
   },
 })
 
+// ─── ✅ FIX 1: Allow images AND videos ───────────────────────────────────────
 const fileFilter = (req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
-  if (allowed.includes(file.mimetype)) {
+  const allowed = [
+    // Images
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    // Videos
+    'video/mp4',
+    'video/quicktime', // .mov
+    'video/webm',
+    'video/x-m4v',
+    'video/ogg',
+  ]
+
+  if (
+    allowed.includes(file.mimetype) ||
+    file.mimetype.startsWith('image/') ||
+    file.mimetype.startsWith('video/')
+  ) {
     cb(null, true)
   } else {
-    cb(new Error('Only image files (JPG, PNG, WEBP, GIF) are allowed'), false)
+    cb(
+      new Error(
+        `File type "${file.mimetype}" not allowed. Use images (JPG, PNG, WEBP, GIF) or videos (MP4, MOV, WEBM)`
+      ),
+      false
+    )
   }
 }
 
+// ─── ✅ FIX 2: Increase file size limit to 100MB for videos ──────────────────
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB per file
-    files: 20,                   // max 20 files
+    fileSize: 100 * 1024 * 1024, // 100MB per file (was 10MB)
+    files: 20, // max 20 files
   },
 })
 

@@ -99,7 +99,6 @@ export const wishlistAPI = {
 }
 
 // ============ ORDERS ============
-// ⭐ Payment endpoints get 90s timeout (Render cold start + Razorpay API can be slow)
 export const ordersAPI = {
   createRazorpayOrder: (amount) =>
     api.post('/orders/create-razorpay-order', { amount }, { timeout: 90000 }),
@@ -107,6 +106,8 @@ export const ordersAPI = {
   getMy: () => api.get('/orders/my'),
   getById: (id) => api.get(`/orders/${id}`),
   cancel: (id) => api.put(`/orders/${id}/cancel`),
+  // ⭐ NEW — Check first-order referral discount
+  checkReferralDiscount: () => api.get('/orders/check-referral-discount'),
   // Admin
   getAll: (params) => api.get('/dashboard/orders', { params }),
   getStats: () => api.get('/dashboard/orders/stats'),
@@ -117,8 +118,10 @@ export const ordersAPI = {
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
+  googleAuth: (data) => api.post('/auth/google', data), // ⭐ Added Google endpoint
   me: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
+  verifyBackup: (data) => api.post('/auth/verify-backup', data), // ⭐ Added
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (data) => api.post('/auth/reset-password', data),
   updateProfile: (data) => api.put('/auth/profile', data),
@@ -137,8 +140,10 @@ export const reviewsAPI = {
 
 // ============ BOOKINGS (Workshop) ============
 export const bookingsAPI = {
-  createOrder: (data) => api.post('/bookings/create-order', data, { timeout: 90000 }),
-  verifyPayment: (data) => api.post('/bookings/verify', data, { timeout: 90000 }),
+  createOrder: (data) =>
+    api.post('/bookings/create-order', data, { timeout: 90000 }),
+  verifyPayment: (data) =>
+    api.post('/bookings/verify', data, { timeout: 90000 }),
   getById: (id) => api.get(`/bookings/${id}`),
   getAll: () => api.get('/bookings'),
 }
@@ -159,6 +164,29 @@ export const dashboardAPI = {
   getStats: () => api.get('/dashboard'),
   getOrders: (params) => api.get('/dashboard/orders', { params }),
   getOrderStats: () => api.get('/dashboard/orders/stats'),
+}
+
+// ============ COUPONS ============
+export const couponsAPI = {
+  // User
+  validate: (code, orderAmount) =>
+    api.post('/coupons/validate', { code, orderAmount }),
+  getMy: () => api.get('/coupons/my'),
+  // Admin
+  getAll: () => api.get('/coupons'),
+  create: (data) => api.post('/coupons', data),
+  update: (id, data) => api.put(`/coupons/${id}`, data),
+  delete: (id) => api.delete(`/coupons/${id}`),
+}
+
+// ============ REFERRALS ============
+export const referralsAPI = {
+  getMy: () => api.get('/referrals/my'),
+  apply: (code) => api.post('/referrals/apply', { referralCode: code }),
+  // Admin
+  getAll: () => api.get('/referrals/admin/all'),
+  triggerReward: (orderId) =>
+    api.post(`/referrals/admin/trigger-reward/${orderId}`),
 }
 
 export default api

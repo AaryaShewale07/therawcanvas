@@ -28,15 +28,17 @@
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.5.2",
     "express-validator": "^7.3.2",
+    "google-auth-library": "^10.9.0",
     "helmet": "^8.2.0",
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",
-    "multer": "^2.1.1",
+    "multer": "^2.2.0",
     "nodemailer": "^8.0.4",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.6",
     "speakeasy": "^2.0.0",
+    "streamifier": "^0.1.1",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {

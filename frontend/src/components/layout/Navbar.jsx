@@ -71,7 +71,7 @@ const Navbar = () => {
           }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="relative group">
               <motion.div
@@ -79,20 +79,13 @@ const Navbar = () => {
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-2"
               >
-                {/* NEW — Your JPG logo */}
-                <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg bg-white">
+                {/* Big logo that overflows navbar */}
+                <div className="w-24 h-24 flex items-center justify-center flex-shrink-0 -ml-2 -my-4">
                   <img
-                    src="/logo.jpg"
-                    className="w-full h-full object-cover"
+                    src="/logo.png"
+                    alt="TheRawCanvasStudio Logo"
+                    className="w-full h-full object-contain"
                   />
-                </div>
-                <div className="hidden sm:block">
-                  <h1 className="font-heading font-bold text-xl text-white">
-                    TheRawCanvasStudio
-                  </h1>
-                  <p className="text-xs text-cream-300 font-script">
-                    Handcrafted Elegance
-                  </p>
                 </div>
               </motion.div>
             </Link>

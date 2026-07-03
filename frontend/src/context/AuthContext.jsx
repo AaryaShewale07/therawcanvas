@@ -9,10 +9,10 @@ const apiFetch = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token')
 
   const config = {
-    credentials: 'include', // 👈 Required for CORS with credentials: true
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -39,7 +39,6 @@ export const AuthProvider = ({ children }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
 
-  // Fetch full user profile
   const fetchUserProfile = async (token) => {
     try {
       const res = await apiFetch('/auth/me')
@@ -63,7 +62,6 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // Initialize auth on mount
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('token')
@@ -100,8 +98,6 @@ export const AuthProvider = ({ children }) => {
       })
 
       const data = await res.json()
-      console.log('🔍 LOGIN RESPONSE:', data)
-
       if (!res.ok) throw new Error(data.message || 'Login failed')
 
       const token = data.data?.token
@@ -110,7 +106,6 @@ export const AuthProvider = ({ children }) => {
       if (!token) throw new Error('Server did not return a token!')
 
       localStorage.setItem('token', token)
-      console.log('✅ Token saved:', token.substring(0, 30))
 
       if (userData) {
         setUser(userData)
@@ -127,18 +122,22 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // ✅ Signup
-  const signup = async (name, email, password) => {
+  // ✅ Signup — now accepts referralCode
+  const signup = async (name, email, password, referralCode) => {
     setIsLoading(true)
     try {
+      const payload = { name, email, password }
+      // ⭐ Only include referralCode if provided (avoid sending empty strings)
+      if (referralCode && referralCode.trim()) {
+        payload.referralCode = referralCode.trim().toUpperCase()
+      }
+
       const res = await apiFetch('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(payload),
       })
 
       const data = await res.json()
-      console.log('🔍 SIGNUP RESPONSE:', data)
-
       if (!res.ok) throw new Error(data.message || 'Signup failed')
 
       const token = data.data?.token
@@ -157,6 +156,47 @@ export const AuthProvider = ({ children }) => {
       return { success: true }
     } catch (error) {
       console.error('Signup error:', error.message)
+      return { success: false, error: error.message }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // ✅ Google Login/Signup — now accepts referralCode
+  const googleLogin = async (credential, referralCode) => {
+    setIsLoading(true)
+    try {
+      const payload = { credential }
+      // ⭐ Only include referralCode if provided
+      if (referralCode && referralCode.trim()) {
+        payload.referralCode = referralCode.trim().toUpperCase()
+      }
+
+      const res = await apiFetch('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Google login failed')
+
+      const token = data.data?.token
+      const userData = data.data?.user
+
+      if (!token) throw new Error('Server did not return a token!')
+
+      localStorage.setItem('token', token)
+
+      if (userData) {
+        setUser(userData)
+        localStorage.setItem('user', JSON.stringify(userData))
+      }
+
+      setIsLoginModalOpen(false)
+      setIsSignupModalOpen(false)
+      return { success: true, isNewUser: data.isNewUser }
+    } catch (error) {
+      console.error('Google login error:', error.message)
       return { success: false, error: error.message }
     } finally {
       setIsLoading(false)
@@ -204,20 +244,17 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // ✅ Logout
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
     localStorage.removeItem('token')
   }
 
-  // ✅ Refresh User
   const refreshUser = async () => {
     const token = localStorage.getItem('token')
     if (token) await fetchUserProfile(token)
   }
 
-  // ✅ Modal Controls
   const openLoginModal = () => {
     setIsSignupModalOpen(false)
     setIsLoginModalOpen(true)
@@ -241,6 +278,7 @@ export const AuthProvider = ({ children }) => {
     isSignupModalOpen,
     login,
     signup,
+    googleLogin,
     logout,
     refreshUser,
     openLoginModal,
@@ -251,9 +289,5 @@ export const AuthProvider = ({ children }) => {
     isAdmin: user?.role === 'admin',
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

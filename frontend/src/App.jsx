@@ -19,6 +19,7 @@ import Admin from './pages/Admin'
 import NotFound from './pages/NotFound'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ProductDetail from './pages/ProductDetail'
+import HeroVideosAdmin from './components/admin/HeroVideosAdmin'
 
 // User Account Pages
 import Profile from './pages/user/Profile'
@@ -36,6 +37,8 @@ import CartDrawer from './components/cart/CartDrawer'
 import ScrollToTop from './components/common/ScrollToTop'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import { useAuth } from './context/AuthContext'
+
+// Info & Content
 import About from './pages/About'
 import OurStory from './pages/OurStory'
 import Blog from './pages/Blog'
@@ -50,6 +53,12 @@ import CollectionPage from './pages/CollectionPage'
 import Gallery from './pages/Gallery'
 import GalleryAdmin from './pages/admin/GalleryAdmin'
 import BannerAdmin from './pages/admin/BannerAdmin'
+import Commissions from './pages/Commissions'
+
+// ⭐ Coupons & Referrals
+import CouponsPage from './components/admin/CouponsPage'
+import ReferralsPage from './components/admin/ReferralsPage'
+import MyReferrals from './pages/MyReferrals'
 
 const AdminRoute = ({ children }) => {
   const { user, isAdmin, isLoading } = useAuth()
@@ -88,7 +97,9 @@ function App() {
         toastOptions={{
           duration: 3000,
           style: {
-            background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#3d2218',
+            background: document.documentElement.classList.contains('dark')
+              ? '#1e293b'
+              : '#3d2218',
             color: '#fefdfb',
             borderRadius: '12px',
             padding: '16px',
@@ -97,7 +108,9 @@ function App() {
           success: {
             iconTheme: {
               primary: '#d4be3e',
-              secondary: document.documentElement.classList.contains('dark') ? '#1e293b' : '#3d2218',
+              secondary: document.documentElement.classList.contains('dark')
+                ? '#1e293b'
+                : '#3d2218',
             },
           },
         }}
@@ -128,8 +141,12 @@ function App() {
               <Route path="analytics" element={<Admin section="analytics" />} />
               <Route path="bookings" element={<Admin section="bookings" />} />
               <Route path="gallery" element={<GalleryAdmin />} />
-              {/* ⭐ MOVED HERE — this is where banner route belongs */}
               <Route path="banners" element={<BannerAdmin />} />
+              <Route path="hero-videos" element={<HeroVideosAdmin />} />
+
+              {/* ⭐ FIXED — relative paths (no leading /admin/) */}
+              <Route path="coupons" element={<CouponsPage />} />
+              <Route path="referrals" element={<ReferralsPage />} />
             </Route>
           </Routes>
         ) : (
@@ -142,6 +159,7 @@ function App() {
               <Route path="chocolates" element={<Chocolates />} />
               <Route path="gifting" element={<Gifting />} />
               <Route path="workshops" element={<Workshops />} />
+              <Route path="commissions" element={<Commissions />} />
 
               {/* Product Detail */}
               <Route path="product/:id" element={<ProductDetail />} />
@@ -150,12 +168,64 @@ function App() {
               <Route path="cart" element={<Cart />} />
 
               {/* Protected routes */}
-              <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-              <Route path="order-success/:id" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
-              <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
-              <Route path="orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-              <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route
+                path="checkout"
+                element={
+                  <ProtectedRoute>
+                    <Checkout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="order-success/:id"
+                element={
+                  <ProtectedRoute>
+                    <OrderSuccess />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="wishlist"
+                element={
+                  <ProtectedRoute>
+                    <Wishlist />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="orders"
+                element={
+                  <ProtectedRoute>
+                    <Orders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ⭐ NEW — User referrals page (protected) */}
+              <Route
+                path="my-referrals"
+                element={
+                  <ProtectedRoute>
+                    <MyReferrals />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Info pages */}
               <Route path="about" element={<About />} />

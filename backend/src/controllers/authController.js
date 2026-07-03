@@ -1,13 +1,14 @@
 import asyncHandler from 'express-async-handler'
 import crypto from 'crypto'
 import User from '../models/User.js'
+import Referral from '../models/Referral.js'
 import jwt from 'jsonwebtoken'
 import sendEmail from '../utils/sendEmail.js'
 import { welcomeEmail } from '../utils/emailTemplates.js'
 import cloudinary from '../config/cloudinary.js'
+import { OAuth2Client } from 'google-auth-library'
 
-// ================= UTIL =================
-
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 const generateToken = (id, rememberMe) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: rememberMe ? '30d' : '7d',
@@ -22,10 +23,39 @@ const sanitizeUser = (user) => {
   return obj
 }
 
+// ⭐ Helper: Apply referral code during signup
+const applyReferralOnSignup = async (newUser, referralCode) => {
+  if (!referralCode) return
+  try {
+    const referrer = await User.findOne({
+      referralCode: referralCode.toUpperCase(),
+    })
+
+    if (!referrer || referrer._id.toString() === newUser._id.toString()) return
+
+    newUser.referredBy = referrer._id
+    await newUser.save({ validateBeforeSave: false })
+
+    await Referral.create({
+      referrer: referrer._id,
+      referee: newUser._id,
+      referralCodeUsed: referralCode.toUpperCase(),
+      status: 'pending',
+    })
+
+    referrer.referralStats.totalReferred += 1
+    await referrer.save({ validateBeforeSave: false })
+
+    console.log(`✅ Referral: ${referrer.email} referred ${newUser.email}`)
+  } catch (err) {
+    console.error('Referral apply failed:', err.message)
+  }
+}
+
 // ================= AUTH =================
 
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body
+  const { name, email, password, referralCode } = req.body
 
   const exists = await User.findOne({ email })
   if (exists) {
@@ -35,7 +65,9 @@ export const register = asyncHandler(async (req, res) => {
 
   const user = await User.create({ name, email, password })
 
-  // Send welcome email (don't block registration if it fails)
+  // Apply referral if provided
+  await applyReferralOnSignup(user, referralCode)
+
   try {
     await sendEmail({
       to: user.email,
@@ -71,7 +103,6 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = generateToken(user._id, rememberMe)
 
-  // Update last login without triggering validators
   user.lastLogin = new Date()
   await user.save({ validateBeforeSave: false })
 
@@ -115,7 +146,7 @@ export const logout = asyncHandler(async (req, res) => {
   res.json({ success: true })
 })
 
-// ================= FORGOT / RESET PASSWORD =================
+// ================= FORGOT / RESET =================
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body
@@ -362,4 +393,76 @@ export const toggleUserStatus = asyncHandler(async (req, res) => {
   user.isActive = !user.isActive
   await user.save({ validateBeforeSave: false })
   res.json({ success: true, data: sanitizeUser(user) })
+})
+
+// ================= GOOGLE AUTH =================
+
+export const googleAuth = asyncHandler(async (req, res) => {
+  const { credential, referralCode } = req.body
+
+  if (!credential) {
+    res.status(400)
+    throw new Error('No Google credential provided')
+  }
+
+  let payload
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    })
+    payload = ticket.getPayload()
+  } catch (err) {
+    res.status(401)
+    throw new Error('Invalid Google token')
+  }
+
+  const { email, name, picture, sub: googleId, email_verified } = payload
+
+  if (!email_verified) {
+    res.status(401)
+    throw new Error('Google email is not verified')
+  }
+
+  let user = await User.findOne({ email: email.toLowerCase() })
+  let isNewUser = false
+
+  if (!user) {
+    user = await User.create({
+      name,
+      email: email.toLowerCase(),
+      googleId,
+      avatar: picture,
+      authProvider: 'google',
+    })
+    isNewUser = true
+
+    // Apply referral for new Google users
+    await applyReferralOnSignup(user, referralCode)
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: '🎉 Welcome to TheRawCanvasStudio!',
+        html: welcomeEmail(user.name),
+      })
+    } catch (emailErr) {
+      console.error('❌ Welcome email failed:', emailErr.message)
+    }
+  } else if (!user.googleId) {
+    user.googleId = googleId
+    if (!user.avatar) user.avatar = picture
+    await user.save({ validateBeforeSave: false })
+  }
+
+  user.lastLogin = new Date()
+  await user.save({ validateBeforeSave: false })
+
+  const token = generateToken(user._id, false)
+
+  res.json({
+    success: true,
+    isNewUser,
+    data: { token, user: sanitizeUser(user) },
+  })
 })

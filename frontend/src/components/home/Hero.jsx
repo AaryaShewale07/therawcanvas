@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { TypeAnimation } from 'react-type-animation'
 import { Link } from 'react-router-dom'
 import { HiOutlineArrowRight, HiOutlineSparkles } from 'react-icons/hi'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import api from '../../utils/api'
 
 /* ═══════════════════════════════════════════════════
    WAVE CANVAS
@@ -318,6 +319,29 @@ const WaveParticles = () => {
    ═══════════════════════════════════════════════════ */
 
 const Hero = () => {
+  const [videos, setVideos] = useState([])
+  const [currentIdx, setCurrentIdx] = useState(0)
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const res = await api.get('/hero-videos')
+        setVideos(res.data.data || [])
+      } catch (err) {
+        console.error('Failed to load hero videos', err)
+      }
+    }
+    fetchVideos()
+  }, [])
+
+  const handleVideoEnd = () => {
+    if (videos.length > 1) {
+      setCurrentIdx((prev) => (prev + 1) % videos.length)
+    }
+  }
+
+  const currentVideo = videos[currentIdx]
+
   return (
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-cream-100 via-cream-50 to-white">
 
@@ -407,7 +431,6 @@ const Hero = () => {
               transition={{ delay: 0.5 }}
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
-              {/* ✅ Explore Collection → /collection */}
               <Link
                 to="/collection"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-chocolate-700 to-chocolate-900 text-white font-semibold rounded-full shadow-xl hover:shadow-2xl transition-all hover:scale-105"
@@ -416,7 +439,6 @@ const Hero = () => {
                 <HiOutlineArrowRight className="w-5 h-5" />
               </Link>
 
-              {/* ✅ Join Workshops → /workshops */}
               <Link
                 to="/workshops"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white/80 backdrop-blur-sm border-2 border-chocolate-700 text-chocolate-800 font-semibold rounded-full shadow-xl hover:shadow-2xl hover:bg-chocolate-700 hover:text-white transition-all hover:scale-105"
@@ -433,22 +455,7 @@ const Hero = () => {
               transition={{ delay: 0.6 }}
               className="grid grid-cols-3 gap-8 mt-12 pt-8 border-t border-cream-200"
             >
-              {[
-                { number: '500+', label: 'Art Pieces' },
-                { number: '50+', label: 'Chocolate Varieties' },
-                { number: '1000+', label: 'Happy Customers' },
-              ].map((stat, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.7 + index * 0.1 }}
-                  className="text-center"
-                >
-                  <p className="text-2xl sm:text-3xl font-bold text-primary-600">{stat.number}</p>
-                  <p className="text-sm text-chocolate-500 mt-1">{stat.label}</p>
-                </motion.div>
-              ))}
+             
             </motion.div>
           </motion.div>
 
@@ -465,24 +472,57 @@ const Hero = () => {
                 transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
                 className="relative z-10"
               >
-                <div className="aspect-square rounded-3xl overflow-hidden shadow-elegant-lg bg-gradient-to-br from-primary-100 to-gold-100 p-8">
-                  <div className="w-full h-full rounded-2xl bg-gradient-to-br from-chocolate-700 to-chocolate-900 flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                        className="w-64 h-64 border border-gold-500/30 rounded-full"
+                <div className="aspect-square rounded-3xl overflow-hidden shadow-elegant-lg bg-gradient-to-br from-chocolate-700 to-chocolate-900 p-8">
+                  <div className="w-full h-full rounded-2xl bg-gradient-to-br from-chocolate-700 to-chocolate-900 flex items-center justify-center relative overflow-hidden">                    {currentVideo ? (
+                    <>
+                      {/* 🎬 VIDEO REPLACES THE STATIC CARD CONTENT */}
+                      <video
+                        key={currentVideo._id}
+                        src={currentVideo.videoUrl}
+                        poster={currentVideo.thumbnail}
+                        autoPlay
+                        muted
+                        playsInline
+                        loop={videos.length === 1}
+                        onEnded={handleVideoEnd}
+                        className="absolute inset-0 w-full h-full object-cover"
                       />
-                      <motion.div
-                        animate={{ rotate: -360 }}
-                        transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-                        className="absolute w-48 h-48 border border-primary-500/30 rounded-full"
-                      />
-                    </div>
-                    <div className="text-center z-10">
-                      <p className="text-gold-400 font-script text-5xl mb-2">TheRawCanvas</p>
-                      <p className="text-white font-heading text-4xl font-bold">Studio</p>
-                    </div>
+
+                      {/* Video indicators (only if multiple videos) */}
+                      {videos.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                          {videos.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setCurrentIdx(i)}
+                              className={`h-1.5 rounded-full transition-all ${i === currentIdx ? 'w-8 bg-gold-400' : 'w-4 bg-white/50'
+                                }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Fallback: Original animated card when no video uploaded */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                          className="w-64 h-64 border border-gold-500/30 rounded-full"
+                        />
+                        <motion.div
+                          animate={{ rotate: -360 }}
+                          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+                          className="absolute w-48 h-48 border border-primary-500/30 rounded-full"
+                        />
+                      </div>
+                      <div className="text-center z-10">
+                        <p className="text-gold-400 font-script text-5xl mb-2">TheRawCanvas</p>
+                        <p className="text-white font-heading text-4xl font-bold">Studio</p>
+                      </div>
+                    </>
+                  )}
                   </div>
                 </div>
               </motion.div>

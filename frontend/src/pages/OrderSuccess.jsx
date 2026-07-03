@@ -1,7 +1,7 @@
 // src/pages/OrderSuccess.jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiCheckCircle,
   HiOutlineShoppingBag,
@@ -13,7 +13,9 @@ import {
 } from 'react-icons/hi'
 import { FaWhatsapp } from 'react-icons/fa'
 import api from '../utils/api'
+import { useAuth } from '../context/AuthContext'
 import WhatsAppCustomizationModal from '../components/common/WhatsAppCustomizationModal'
+import ReferralPopup from './user/ReferralPopup'
 
 /* ── tiny confetti burst on mount ── */
 const ConfettiBurst = () => (
@@ -46,39 +48,142 @@ const ConfettiBurst = () => (
 
 /* ── status colour map ── */
 const statusColors = {
-  placed:    'bg-blue-100 text-blue-700',
+  placed: 'bg-blue-100 text-blue-700',
   confirmed: 'bg-purple-100 text-purple-700',
-  shipped:   'bg-indigo-100 text-indigo-700',
+  shipped: 'bg-indigo-100 text-indigo-700',
   delivered: 'bg-green-100 text-green-700',
   cancelled: 'bg-red-100 text-red-700',
 }
 
+// ⭐ Helper: Check if item needs customization
+const itemNeedsCustomization = (item) => {
+  if (!item) return false
+  const category = (item.category || '').toString().toLowerCase().trim()
+  const isGifting = category === 'gifting'
+  const isCustom = item.requiresCustomization === true
+  return isGifting || isCustom
+}
+
 const OrderSuccess = () => {
   const { id } = useParams()
+  const { user } = useAuth()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showConfetti, setShowConfetti] = useState(true)
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
+  const [showReferralPopup, setShowReferralPopup] = useState(false)
+  const [whatsAppDismissed, setWhatsAppDismissed] = useState(false)
 
+  // ⭐ Refs to permanently track if popups were dismissed (survives re-renders)
+  const referralDismissedRef = useRef(false)
+  const whatsAppShownRef = useRef(false)
+  const referralShownRef = useRef(false)
+
+  // ⭐ FETCH ORDER + Set up popup logic
   useEffect(() => {
+    let whatsAppTimer, referralTimer
+
+    // ⭐ Check sessionStorage on mount — if already dismissed, mark refs
+    const referralDismissedKey = `referral_dismissed_${id}`
+    const whatsAppShownKey = `whatsapp_shown_${id}`
+    
+    if (sessionStorage.getItem(referralDismissedKey) === 'true') {
+      referralDismissedRef.current = true
+      referralShownRef.current = true
+    }
+    if (sessionStorage.getItem(whatsAppShownKey) === 'true') {
+      whatsAppShownRef.current = true
+    }
+
     const fetchOrder = async () => {
       try {
         const { data } = await api.get(`/orders/${id}`)
         setOrder(data.order)
-        if (data.order?.hasCustomization) {
-          setTimeout(() => setShowWhatsAppModal(true), 1500)
+
+        const anyItemCustom = data.order?.items?.some(itemNeedsCustomization)
+        const needsCustomization = data.order?.hasCustomization === true || anyItemCustom
+
+        console.log('═══════════════════════════════════════')
+        console.log('📦 Order loaded:', data.order?._id?.slice(-8))
+        console.log('  needsCustomization:', needsCustomization)
+        console.log('  whatsAppAlreadyShown:', whatsAppShownRef.current)
+        console.log('  referralAlreadyDismissed:', referralDismissedRef.current)
+        console.log('═══════════════════════════════════════')
+
+        // ⭐ Show WhatsApp modal only if needed AND not already shown
+        if (needsCustomization && !whatsAppShownRef.current) {
+          whatsAppTimer = setTimeout(() => {
+            console.log('📸 Opening WhatsApp modal')
+            setShowWhatsAppModal(true)
+            whatsAppShownRef.current = true
+            sessionStorage.setItem(whatsAppShownKey, 'true')
+          }, 1500)
+
+          // Delayed referral popup (only if not dismissed)
+          if (!referralDismissedRef.current) {
+            referralTimer = setTimeout(() => {
+              if (!referralDismissedRef.current) {
+                console.log('🎁 Opening referral popup (delayed)')
+                setShowReferralPopup(true)
+                referralShownRef.current = true
+              }
+            }, 12000)
+          }
+        } else if (!referralDismissedRef.current) {
+          // No customization → show referral popup sooner
+          referralTimer = setTimeout(() => {
+            if (!referralDismissedRef.current) {
+              console.log('🎁 Opening referral popup')
+              setShowReferralPopup(true)
+              referralShownRef.current = true
+            }
+          }, 3500)
         }
       } catch (err) {
-        console.error(err)
+        console.error('❌ Failed to load order:', err)
       } finally {
         setLoading(false)
       }
     }
+
     fetchOrder()
-    /* hide confetti after 3 s */
-    const t = setTimeout(() => setShowConfetti(false), 3000)
-    return () => clearTimeout(t)
+
+    const confettiTimer = setTimeout(() => setShowConfetti(false), 3000)
+
+    return () => {
+      clearTimeout(confettiTimer)
+      if (whatsAppTimer) clearTimeout(whatsAppTimer)
+      if (referralTimer) clearTimeout(referralTimer)
+    }
   }, [id])
+
+  // ⭐ When WhatsApp modal closes, show referral popup (only ONCE)
+  useEffect(() => {
+    if (whatsAppDismissed && !referralDismissedRef.current && !referralShownRef.current) {
+      const timer = setTimeout(() => {
+        if (!referralDismissedRef.current) {
+          console.log('🎁 Opening referral popup after WhatsApp dismissed')
+          setShowReferralPopup(true)
+          referralShownRef.current = true
+        }
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [whatsAppDismissed])
+
+  const handleWhatsAppClose = () => {
+    setShowWhatsAppModal(false)
+    setWhatsAppDismissed(true)
+  }
+
+  // ⭐ CRITICAL — Handle referral popup close (permanently dismiss it)
+  const handleReferralClose = () => {
+    console.log('❌ Referral popup dismissed permanently')
+    setShowReferralPopup(false)
+    referralDismissedRef.current = true
+    referralShownRef.current = true
+    sessionStorage.setItem(`referral_dismissed_${id}`, 'true')
+  }
 
   if (loading) {
     return (
@@ -88,15 +193,23 @@ const OrderSuccess = () => {
     )
   }
 
-  /* derive amounts safely */
-  const itemsTotal = order?.items?.reduce(
-    (sum, item) => sum + item.price * item.quantity, 0
-  ) ?? 0
-  const shippingCost = order ? (order.totalAmount - itemsTotal) : 0
+  const itemsTotal =
+    order?.items?.reduce((sum, item) => sum + item.price * item.quantity, 0) ?? 0
+  const shippingCost = order
+    ? order.totalAmount - itemsTotal + (order.coupon?.discountAmount || 0)
+    : 0
+
+  const anyItemNeedsCustomization =
+    order?.hasCustomization === true || order?.items?.some(itemNeedsCustomization)
+
+  // ⭐ Manual button handler — always allow reopening
+  const handleManualReferralClick = () => {
+    referralDismissedRef.current = false // Reset dismissal for manual click
+    setShowReferralPopup(true)
+  }
 
   return (
     <>
-      {/* Confetti */}
       {showConfetti && <ConfettiBurst />}
 
       <motion.div
@@ -105,10 +218,7 @@ const OrderSuccess = () => {
         className="min-h-screen pt-24 pb-16 bg-gradient-to-b from-cream-50 to-white"
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          {/* ══════════════════════════════════════
-              SUCCESS HERO
-          ══════════════════════════════════════ */}
+          {/* SUCCESS HERO */}
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -126,15 +236,16 @@ const OrderSuccess = () => {
             </p>
             {order && (
               <p className="text-sm text-chocolate-500 font-mono">
-                Order ID: <span className="font-bold text-chocolate-800">#{order._id.slice(-8).toUpperCase()}</span>
+                Order ID:{' '}
+                <span className="font-bold text-chocolate-800">
+                  #{order._id.slice(-8).toUpperCase()}
+                </span>
               </p>
             )}
           </motion.div>
 
-          {/* ══════════════════════════════════════
-              CUSTOMIZATION BANNER
-          ══════════════════════════════════════ */}
-          {order?.hasCustomization && (
+          {/* CUSTOMIZATION BANNER */}
+          {anyItemNeedsCustomization && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -165,9 +276,42 @@ const OrderSuccess = () => {
             </motion.div>
           )}
 
-          {/* ══════════════════════════════════════
-              MAIN ORDER CARD
-          ══════════════════════════════════════ */}
+          {/* REFER & EARN BANNER */}
+          {user?.referralCode && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-gradient-to-r from-primary-500 via-primary-600 to-gold-500 rounded-3xl p-6 mb-6 text-white shadow-xl relative overflow-hidden"
+            >
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full pointer-events-none" />
+              <div className="absolute -bottom-16 -left-16 w-52 h-52 bg-white/5 rounded-full pointer-events-none" />
+
+              <div className="relative flex items-start gap-4 flex-wrap">
+                <div className="flex-shrink-0 w-14 h-14 bg-white/20 backdrop-blur rounded-full flex items-center justify-center">
+                  <HiOutlineGift className="w-8 h-8" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-bold mb-1">
+                    🎁 Loved shopping with us? Get ₹100!
+                  </h3>
+                  <p className="text-white/90 text-sm mb-4">
+                    Share your referral code with friends. When they place their
+                    first order, you get a <strong>₹100 discount coupon</strong>!
+                  </p>
+                  <button
+                    onClick={handleManualReferralClick}
+                    className="bg-white text-primary-600 font-bold px-6 py-3 rounded-full hover:bg-cream-50 transition inline-flex items-center gap-2 shadow-md"
+                  >
+                    <HiOutlineGift className="w-5 h-5" />
+                    Share & Earn ₹100
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* MAIN ORDER CARD */}
           {order && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -175,47 +319,59 @@ const OrderSuccess = () => {
               transition={{ delay: 0.3 }}
               className="bg-white rounded-3xl shadow-elegant overflow-hidden mb-6"
             >
-
-              {/* ── Header strip ── */}
               <div className="bg-gradient-to-r from-chocolate-800 to-chocolate-900 px-8 py-5 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-cream-300 text-xs font-semibold uppercase tracking-wider mb-0.5">Order ID</p>
+                  <p className="text-cream-300 text-xs font-semibold uppercase tracking-wider mb-0.5">
+                    Order ID
+                  </p>
                   <p className="text-white font-mono font-bold text-lg">
                     #{order._id.slice(-8).toUpperCase()}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-cream-300 text-xs font-semibold uppercase tracking-wider mb-0.5">Order Date</p>
+                  <p className="text-cream-300 text-xs font-semibold uppercase tracking-wider mb-0.5">
+                    Order Date
+                  </p>
                   <p className="text-white font-semibold">
                     {new Date(order.createdAt).toLocaleDateString('en-IN', {
-                      day: 'numeric', month: 'long', year: 'numeric',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
                     })}
                   </p>
                 </div>
               </div>
 
               <div className="p-8 space-y-8">
-
-                {/* ── Status pills ── */}
                 <div className="flex flex-wrap gap-2">
-                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${statusColors[order.orderStatus] ?? 'bg-gray-100 text-gray-700'}`}>
+                  <span
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold ${
+                      statusColors[order.orderStatus] ?? 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
                     📦 {order.orderStatus?.toUpperCase()}
                   </span>
-                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${
-                    order.paymentStatus === 'paid'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}>
+                  <span
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold ${
+                      order.paymentStatus === 'paid'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}
+                  >
                     💳 {order.paymentMethod} — {order.paymentStatus?.toUpperCase()}
                   </span>
-                  {order.hasCustomization && (
+                  {anyItemNeedsCustomization && (
                     <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-gold-100 text-gold-700">
                       🎨 CUSTOMIZATION
                     </span>
                   )}
+                  {order.coupon?.code && (
+                    <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-primary-100 text-primary-700">
+                      🎟️ {order.coupon.code}
+                    </span>
+                  )}
                 </div>
 
-                {/* ── Items ordered ── */}
                 <div>
                   <h3 className="font-bold text-chocolate-900 text-lg mb-3 flex items-center gap-2">
                     <HiOutlineShoppingBag className="w-5 h-5" />
@@ -239,11 +395,13 @@ const OrderSuccess = () => {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-chocolate-900 line-clamp-1">{item.title}</p>
+                          <p className="font-semibold text-chocolate-900 line-clamp-1">
+                            {item.title}
+                          </p>
                           <p className="text-sm text-chocolate-500">
                             ₹{item.price} × {item.quantity}
                           </p>
-                          {(item.requiresCustomization || item.category === 'gifting') && (
+                          {itemNeedsCustomization(item) && (
                             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full inline-flex items-center gap-1 mt-1">
                               <FaWhatsapp className="w-3 h-3" /> Send photos
                             </span>
@@ -257,7 +415,6 @@ const OrderSuccess = () => {
                   </div>
                 </div>
 
-                {/* ── Price breakdown ── */}
                 <div>
                   <h3 className="font-bold text-chocolate-900 text-lg mb-3 flex items-center gap-2">
                     <HiOutlineCreditCard className="w-5 h-5" />
@@ -265,9 +422,21 @@ const OrderSuccess = () => {
                   </h3>
                   <div className="bg-cream-50 rounded-2xl p-5 space-y-3">
                     <div className="flex justify-between text-chocolate-700">
-                      <span>Subtotal ({order.items.length} item{order.items.length !== 1 ? 's' : ''})</span>
+                      <span>
+                        Subtotal ({order.items.length} item
+                        {order.items.length !== 1 ? 's' : ''})
+                      </span>
                       <span>₹{itemsTotal}</span>
                     </div>
+
+                    {order.coupon?.code && (
+                      <div className="flex justify-between text-green-700 font-semibold">
+                        <span className="flex items-center gap-1.5">
+                          🎟️ Coupon ({order.coupon.code})
+                        </span>
+                        <span>-₹{order.coupon.discountAmount}</span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between text-chocolate-700">
                       <span className="flex items-center gap-1.5">
@@ -288,13 +457,16 @@ const OrderSuccess = () => {
                     )}
 
                     <div className="border-t border-cream-200 pt-3 flex justify-between items-center">
-                      <span className="text-lg font-bold text-chocolate-900">Total Paid</span>
-                      <span className="text-2xl font-bold text-chocolate-900">₹{order.totalAmount}</span>
+                      <span className="text-lg font-bold text-chocolate-900">
+                        Total Paid
+                      </span>
+                      <span className="text-2xl font-bold text-chocolate-900">
+                        ₹{order.totalAmount}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* ── Shipping address ── */}
                 <div>
                   <h3 className="font-bold text-chocolate-900 text-lg mb-3 flex items-center gap-2">
                     <HiOutlineLocationMarker className="w-5 h-5" />
@@ -307,7 +479,8 @@ const OrderSuccess = () => {
                     <p className="text-chocolate-700 leading-relaxed">
                       {order.shippingAddress?.street}
                       <br />
-                      {order.shippingAddress?.city}, {order.shippingAddress?.state} — {order.shippingAddress?.pincode}
+                      {order.shippingAddress?.city}, {order.shippingAddress?.state} —{' '}
+                      {order.shippingAddress?.pincode}
                     </p>
                     <p className="text-chocolate-600 mt-2 text-sm">
                       📞 {order.shippingAddress?.phone}
@@ -315,31 +488,46 @@ const OrderSuccess = () => {
                   </div>
                 </div>
 
-                {/* ── What happens next ── */}
                 <div>
-                  <h3 className="font-bold text-chocolate-900 text-lg mb-3">What happens next?</h3>
+                  <h3 className="font-bold text-chocolate-900 text-lg mb-3">
+                    What happens next?
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
-                      { icon: '✅', step: '1', title: 'Order Confirmed', desc: "We've received your order and payment" },
-                      { icon: '🎨', step: '2', title: 'Being Prepared', desc: 'Our artisans are crafting your order' },
-                      { icon: '🚚', step: '3', title: 'Out for Delivery', desc: 'Your order will be shipped shortly' },
+                      {
+                        icon: '✅',
+                        step: '1',
+                        title: 'Order Confirmed',
+                        desc: "We've received your order and payment",
+                      },
+                      {
+                        icon: '🎨',
+                        step: '2',
+                        title: 'Being Prepared',
+                        desc: 'Our artisans are crafting your order',
+                      },
+                      {
+                        icon: '🚚',
+                        step: '3',
+                        title: 'Out for Delivery',
+                        desc: 'Your order will be shipped shortly',
+                      },
                     ].map((s) => (
                       <div key={s.step} className="bg-cream-50 rounded-2xl p-4 text-center">
                         <div className="text-3xl mb-2">{s.icon}</div>
-                        <p className="font-bold text-chocolate-900 text-sm mb-1">{s.title}</p>
+                        <p className="font-bold text-chocolate-900 text-sm mb-1">
+                          {s.title}
+                        </p>
                         <p className="text-xs text-chocolate-500">{s.desc}</p>
                       </div>
                     ))}
                   </div>
                 </div>
-
               </div>
             </motion.div>
           )}
 
-          {/* ══════════════════════════════════════
-              ACTION BUTTONS
-          ══════════════════════════════════════ */}
+          {/* ACTION BUTTONS */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -363,8 +551,7 @@ const OrderSuccess = () => {
             </Link>
           </motion.div>
 
-          {/* ── WhatsApp button for customization orders ── */}
-          {order?.hasCustomization && (
+          {anyItemNeedsCustomization && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -380,16 +567,23 @@ const OrderSuccess = () => {
               </button>
             </motion.div>
           )}
-
         </div>
       </motion.div>
 
-      {/* WhatsApp Modal */}
       <WhatsAppCustomizationModal
         isOpen={showWhatsAppModal}
-        onClose={() => setShowWhatsAppModal(false)}
+        onClose={handleWhatsAppClose}
         order={order}
       />
+
+      <AnimatePresence>
+        {showReferralPopup && user?.referralCode && (
+          <ReferralPopup
+            referralCode={user.referralCode}
+            onClose={handleReferralClose}
+          />
+        )}
+      </AnimatePresence>
     </>
   )
 }
