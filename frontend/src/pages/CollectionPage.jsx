@@ -17,19 +17,16 @@ import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { useAuth } from '../context/AuthContext'
 
-/* ═══════════════════════════════════════════════════
-   SECTION HEADER
-   ═══════════════════════════════════════════════════ */
-
+/* SECTION HEADER */
 const SectionHeader = ({ title, subtitle, href, accentColor }) => (
-  <div className="flex items-end justify-between mb-8">
+  <div className="flex items-end justify-between mb-6 sm:mb-8">
     <div>
       <motion.p
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
-        className="text-xs font-semibold tracking-widest uppercase mb-1"
+        className="text-[10px] sm:text-xs font-semibold tracking-widest uppercase mb-1"
         style={{ color: accentColor }}
       >
         {subtitle}
@@ -39,7 +36,7 @@ const SectionHeader = ({ title, subtitle, href, accentColor }) => (
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="text-3xl sm:text-4xl font-heading font-bold text-chocolate-900"
+        className="text-2xl sm:text-4xl font-heading font-bold text-chocolate-900"
       >
         {title}
       </motion.h2>
@@ -53,25 +50,22 @@ const SectionHeader = ({ title, subtitle, href, accentColor }) => (
     >
       <Link
         to={href}
-        className="group flex items-center gap-2 text-sm font-semibold text-chocolate-600 hover:text-chocolate-900 transition-colors duration-200"
+        className="group flex items-center gap-2 text-xs sm:text-sm font-semibold text-chocolate-600 hover:text-chocolate-900 transition-colors duration-200"
       >
         <span className="hidden sm:inline">Show More</span>
         <span className="sm:hidden">All</span>
         <motion.span
-          className="inline-flex items-center justify-center w-9 h-9 rounded-full border-2 border-chocolate-300 group-hover:border-chocolate-800 group-hover:bg-chocolate-800 transition-all duration-300"
+          className="inline-flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-chocolate-300 group-hover:border-chocolate-800 group-hover:bg-chocolate-800 transition-all duration-300"
           whileHover={{ x: 4 }}
         >
-          <HiOutlineArrowNarrowRight className="w-4 h-4 text-chocolate-600 group-hover:text-white transition-colors duration-300" />
+          <HiOutlineArrowNarrowRight className="w-3 h-3 sm:w-4 sm:h-4 text-chocolate-600 group-hover:text-white transition-colors duration-300" />
         </motion.span>
       </Link>
     </motion.div>
   </div>
 )
 
-/* ═══════════════════════════════════════════════════
-   SECTION DIVIDER
-   ═══════════════════════════════════════════════════ */
-
+/* SECTION DIVIDER */
 const SectionDivider = ({ flip = false }) => (
   <div className={`w-full overflow-hidden leading-none pointer-events-none ${flip ? 'rotate-180' : ''}`}>
     <svg viewBox="0 0 1440 60" className="w-full h-12" preserveAspectRatio="none">
@@ -89,32 +83,26 @@ const SectionDivider = ({ flip = false }) => (
   </div>
 )
 
-/* ═══════════════════════════════════════════════════
-   SKELETON CARD
-   ═══════════════════════════════════════════════════ */
-
+/* SKELETON CARD */
 const SkeletonCard = () => (
-  <div className="bg-white rounded-3xl overflow-hidden shadow-md border border-cream-100 animate-pulse">
+  <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-md border border-cream-100 animate-pulse">
     <div className="aspect-[4/5] bg-cream-100" />
-    <div className="p-5 space-y-3">
-      <div className="h-4 bg-cream-200 rounded w-3/4" />
-      <div className="h-3 bg-cream-100 rounded w-1/2" />
+    <div className="p-3 sm:p-5 space-y-2 sm:space-y-3">
+      <div className="h-3 sm:h-4 bg-cream-200 rounded w-3/4" />
+      <div className="h-2 sm:h-3 bg-cream-100 rounded w-1/2" />
       <div className="flex justify-between items-center pt-2">
-        <div className="h-5 bg-cream-200 rounded w-1/4" />
-        <div className="h-8 w-20 bg-cream-200 rounded-full" />
+        <div className="h-4 sm:h-5 bg-cream-200 rounded w-1/4" />
+        <div className="h-6 w-14 sm:h-8 sm:w-20 bg-cream-200 rounded-full" />
       </div>
-      <div className="flex gap-2 pt-2">
-        <div className="h-9 flex-1 bg-cream-100 rounded-full" />
-        <div className="h-9 flex-1 bg-cream-200 rounded-full" />
+      <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 pt-2">
+        <div className="h-7 sm:h-9 flex-1 bg-cream-100 rounded-full" />
+        <div className="h-7 sm:h-9 flex-1 bg-cream-200 rounded-full" />
       </div>
     </div>
   </div>
 )
 
-/* ═══════════════════════════════════════════════════
-   PRODUCT CARD
-   ═══════════════════════════════════════════════════ */
-
+/* PRODUCT CARD - COMPACT MOBILE */
 const ProductCard = ({ item, index, accentBg = 'bg-primary-500', accentText = 'text-primary-600', borderColor = 'border-primary-500', hoverBg = 'hover:bg-primary-50' }) => {
   const navigate = useNavigate()
   const { addToCart } = useCart()
@@ -143,7 +131,6 @@ const ProductCard = ({ item, index, accentBg = 'bg-primary-500', accentText = 't
     navigate(`/product/${item._id}`)
   }
 
-  /* ── Buy Now — no cart, go straight to checkout with state ── */
   const handleBuyNow = (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -169,10 +156,10 @@ const ProductCard = ({ item, index, accentBg = 'bg-primary-500', accentText = 't
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
       whileHover={{ y: -8 }}
-      className="group bg-white rounded-3xl overflow-hidden shadow-elegant hover:shadow-elegant-lg transition-all duration-500 border border-cream-100 cursor-pointer"
+      className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-elegant hover:shadow-elegant-lg transition-all duration-500 border border-cream-100 cursor-pointer"
       onClick={() => navigate(`/product/${item._id}`)}
     >
-      {/* ── IMAGE ── */}
+      {/* IMAGE */}
       <div className="relative aspect-[4/5] overflow-hidden bg-cream-100">
         {item.images?.[0] ? (
           <img
@@ -188,15 +175,14 @@ const ProductCard = ({ item, index, accentBg = 'bg-primary-500', accentText = 't
 
         <div className="absolute inset-0 bg-gradient-to-t from-chocolate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-        {/* Hover icon buttons */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+        {/* Hover icon buttons - hidden on mobile */}
+        <div className="hidden sm:flex absolute bottom-4 left-4 right-4 items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleWishlist}
-            className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-colors ${
-              inWishlist ? 'bg-red-500 text-white' : 'bg-white text-red-500 hover:bg-red-50'
-            }`}
+            className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-colors ${inWishlist ? 'bg-red-500 text-white' : 'bg-white text-red-500 hover:bg-red-50'
+              }`}
           >
             {inWishlist ? <HiHeart className="w-5 h-5" /> : <HiOutlineHeart className="w-5 h-5" />}
           </motion.button>
@@ -220,73 +206,84 @@ const ProductCard = ({ item, index, accentBg = 'bg-primary-500', accentText = 't
           </motion.button>
         </div>
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+        {/* Wishlist button always visible on mobile */}
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={handleWishlist}
+          className={`sm:hidden absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-colors ${inWishlist ? 'bg-red-500 text-white' : 'bg-white/90 text-red-500'
+            }`}
+        >
+          {inWishlist ? <HiHeart className="w-4 h-4" /> : <HiOutlineHeart className="w-4 h-4" />}
+        </motion.button>
+
+        {/* Badges - smaller on mobile */}
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 sm:gap-1.5">
           {item.isNew && (
-            <span className="px-2.5 py-1 bg-gold-500 text-chocolate-900 text-[10px] font-bold rounded-full">NEW</span>
+            <span className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 bg-gold-500 text-chocolate-900 text-[9px] sm:text-[10px] font-bold rounded-full">NEW</span>
           )}
           {item.originalPrice && (
-            <span className="px-2.5 py-1 bg-red-500 text-white text-[10px] font-bold rounded-full">SALE</span>
+            <span className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 bg-red-500 text-white text-[9px] sm:text-[10px] font-bold rounded-full">SALE</span>
           )}
         </div>
 
         {item.subCategory && (
-          <span className="absolute top-3 right-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-semibold text-chocolate-700">
+          <span className="absolute top-2 right-2 sm:top-3 sm:right-3 px-1.5 py-0.5 sm:px-2.5 sm:py-1 bg-white/90 backdrop-blur-sm rounded-full text-[9px] sm:text-[10px] font-semibold text-chocolate-700">
             {item.subCategory}
           </span>
         )}
       </div>
 
-      {/* ── INFO ── */}
-      <div className="p-5">
-        <h3 className="font-heading font-bold text-lg text-chocolate-900 mb-0.5 line-clamp-1 group-hover:text-chocolate-700 transition-colors">
+      {/* INFO - COMPACT MOBILE */}
+      <div className="p-2.5 sm:p-5">
+        <h3 className="font-heading font-bold text-xs sm:text-lg text-chocolate-900 mb-0.5 line-clamp-1 group-hover:text-chocolate-700 transition-colors">
           {item.title}
         </h3>
 
         {item.artist && (
-          <p className="text-chocolate-500 text-xs mb-2">by {item.artist}</p>
+          <p className="text-chocolate-500 text-[10px] sm:text-xs mb-1 sm:mb-2">by {item.artist}</p>
         )}
         {item.shortDescription && !item.artist && (
-          <p className="text-chocolate-500 text-xs mb-2 line-clamp-1">{item.shortDescription}</p>
+          <p className="hidden sm:block text-chocolate-500 text-xs mb-2 line-clamp-1">{item.shortDescription}</p>
         )}
 
-        <div className="flex items-center justify-between mt-1 mb-4">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mt-1 mb-2 sm:mb-4">
+          <div className="flex items-center gap-1 sm:gap-2">
             {item.price > 0 && (
-              <span className={`text-lg font-bold ${accentText}`}>₹{item.price}</span>
+              <span className={`text-xs sm:text-lg font-bold ${accentText}`}>₹{item.price}</span>
             )}
             {item.originalPrice && (
-              <span className="text-xs text-chocolate-400 line-through">₹{item.originalPrice}</span>
+              <span className="text-[10px] sm:text-xs text-chocolate-400 line-through">₹{item.originalPrice}</span>
             )}
             {item.price === 0 && (
-              <span className="text-sm font-semibold text-green-600">Free</span>
+              <span className="text-xs sm:text-sm font-semibold text-green-600">Free</span>
             )}
           </div>
-          <div className="flex items-center gap-1 text-chocolate-400">
+          <div className="hidden sm:flex items-center gap-1 text-chocolate-400">
             <HiOutlineHeart className="w-3.5 h-3.5" />
             <span className="text-xs">{(item.likes || 0) + (inWishlist ? 1 : 0)}</span>
           </div>
         </div>
 
-        {/* ── Add to Cart + Buy Now buttons ── */}
-        <div className="flex gap-2 pt-3 border-t border-cream-100">
+        {/* Buttons - Stacked on mobile */}
+        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 pt-2 sm:pt-3 border-t border-cream-100">
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={handleCart}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full border-2 ${borderColor} ${accentText} font-semibold text-xs ${hoverBg} transition-colors`}
+            className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 rounded-full border-2 ${borderColor} ${accentText} font-semibold text-[10px] sm:text-xs ${hoverBg} transition-colors`}
           >
-            <HiOutlineShoppingBag className="w-3.5 h-3.5" />
-            Add to Cart
+            <HiOutlineShoppingBag className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden xs:inline sm:inline">Add to Cart</span>
+            <span className="xs:hidden sm:hidden">Cart</span>
           </motion.button>
 
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={handleBuyNow}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full ${accentBg} text-white font-semibold text-xs hover:opacity-90 transition-opacity shadow-md`}
+            className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 rounded-full ${accentBg} text-white font-semibold text-[10px] sm:text-xs hover:opacity-90 transition-opacity shadow-md`}
           >
-            <HiOutlineBolt className="w-3.5 h-3.5" />
+            <HiOutlineBolt className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             Buy Now
           </motion.button>
         </div>
@@ -295,10 +292,7 @@ const ProductCard = ({ item, index, accentBg = 'bg-primary-500', accentText = 't
   )
 }
 
-/* ═══════════════════════════════════════════════════
-   EMPTY STATE
-   ═══════════════════════════════════════════════════ */
-
+/* EMPTY STATE */
 const EmptyState = ({ icon: Icon, message }) => (
   <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
     <div className="w-16 h-16 bg-cream-100 rounded-full flex items-center justify-center mb-4">
@@ -308,10 +302,7 @@ const EmptyState = ({ icon: Icon, message }) => (
   </div>
 )
 
-/* ═══════════════════════════════════════════════════
-   COLLECTION PAGE
-   ═══════════════════════════════════════════════════ */
-
+/* COLLECTION PAGE */
 const CollectionPage = () => {
   const [artItems, setArtItems] = useState([])
   const [chocolateItems, setChocolateItems] = useState([])
@@ -337,11 +328,8 @@ const CollectionPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-cream-50 to-white pt-20">
-
-      {/* ══════════════════════════════════════════
-          HERO BANNER
-      ══════════════════════════════════════════ */}
-      <section className="relative bg-gradient-to-br from-chocolate-900 via-chocolate-800 to-primary-900 py-24 px-4 overflow-hidden">
+      {/* HERO BANNER */}
+      <section className="relative bg-gradient-to-br from-chocolate-900 via-chocolate-800 to-primary-900 py-16 sm:py-24 px-4 overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <motion.div
             animate={{ rotate: 360 }}
@@ -361,7 +349,7 @@ const CollectionPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-gold-400 text-sm font-semibold tracking-widest uppercase mb-4"
+            className="text-gold-400 text-xs sm:text-sm font-semibold tracking-widest uppercase mb-4"
           >
             TheRawCanvas Studio
           </motion.p>
@@ -370,7 +358,7 @@ const CollectionPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold text-white leading-tight mb-6"
+            className="text-3xl sm:text-5xl lg:text-6xl font-heading font-bold text-white leading-tight mb-6"
           >
             Our{' '}
             <span
@@ -390,7 +378,7 @@ const CollectionPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-cream-200 text-lg max-w-2xl mx-auto"
+            className="text-cream-200 text-sm sm:text-lg max-w-2xl mx-auto"
           >
             Explore handcrafted art, artisan chocolates, and curated gift sets — each made with
             intention and love.
@@ -400,17 +388,17 @@ const CollectionPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-wrap justify-center gap-3 mt-8"
+            className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8"
           >
             {[
-              { label: '🎨 Art Collection', href: '#art' },
+              { label: '🎨 Art', href: '#art' },
               { label: '🍫 Chocolates', href: '#chocolate' },
               { label: '🎁 Gifting', href: '#gifting' },
             ].map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className="px-5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                className="px-3 py-1.5 sm:px-5 sm:py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-medium rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-105"
               >
                 {item.label}
               </a>
@@ -421,22 +409,20 @@ const CollectionPage = () => {
 
       <SectionDivider />
 
-      {/* ══════════════════════════════════════════
-          SECTION 1 — ART
-      ══════════════════════════════════════════ */}
-      <section id="art" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
+      {/* SECTION 1 — ART */}
+      <section id="art" className="py-12 sm:py-20 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
         <SectionHeader
           title="Art Collection"
           subtitle="Original Artwork"
           href="/art"
           accentColor="#a3482a"
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {loading.art
             ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
             : artItems.length === 0
-            ? <EmptyState icon={HiOutlineShoppingBag} message="No artworks added yet. Check back soon!" />
-            : artItems.slice(0, 4).map((item, i) => (
+              ? <EmptyState icon={HiOutlineShoppingBag} message="No artworks added yet. Check back soon!" />
+              : artItems.slice(0, 4).map((item, i) => (
                 <ProductCard
                   key={item._id}
                   item={item}
@@ -455,11 +441,11 @@ const CollectionPage = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-10 flex justify-center"
+            className="mt-8 sm:mt-10 flex justify-center"
           >
             <Link
               to="/art"
-              className="inline-flex items-center gap-2 px-8 py-3 border-2 border-chocolate-800 text-chocolate-800 font-semibold rounded-full hover:bg-chocolate-800 hover:text-white transition-all duration-300"
+              className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 border-2 border-chocolate-800 text-chocolate-800 text-sm sm:text-base font-semibold rounded-full hover:bg-chocolate-800 hover:text-white transition-all duration-300"
             >
               Browse All Art Pieces
               <HiOutlineArrowRight className="w-4 h-4" />
@@ -470,10 +456,8 @@ const CollectionPage = () => {
 
       <SectionDivider flip />
 
-      {/* ══════════════════════════════════════════
-          SECTION 2 — CHOCOLATES
-      ══════════════════════════════════════════ */}
-      <section id="chocolate" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-chocolate-50/40 to-transparent scroll-mt-20">
+      {/* SECTION 2 — CHOCOLATES */}
+      <section id="chocolate" className="py-12 sm:py-20 px-3 sm:px-6 lg:px-8 bg-gradient-to-b from-chocolate-50/40 to-transparent scroll-mt-20">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
             title="Chocolate Collection"
@@ -481,12 +465,12 @@ const CollectionPage = () => {
             href="/chocolates"
             accentColor="#aa941e"
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {loading.chocolate
               ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
               : chocolateItems.length === 0
-              ? <EmptyState icon={HiOutlineShoppingBag} message="No chocolates added yet. Check back soon!" />
-              : chocolateItems.slice(0, 4).map((item, i) => (
+                ? <EmptyState icon={HiOutlineShoppingBag} message="No chocolates added yet. Check back soon!" />
+                : chocolateItems.slice(0, 4).map((item, i) => (
                   <ProductCard
                     key={item._id}
                     item={item}
@@ -505,11 +489,11 @@ const CollectionPage = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-10 flex justify-center"
+              className="mt-8 sm:mt-10 flex justify-center"
             >
               <Link
                 to="/chocolates"
-                className="inline-flex items-center gap-2 px-8 py-3 border-2 border-chocolate-800 text-chocolate-800 font-semibold rounded-full hover:bg-chocolate-800 hover:text-white transition-all duration-300"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 border-2 border-chocolate-800 text-chocolate-800 text-sm sm:text-base font-semibold rounded-full hover:bg-chocolate-800 hover:text-white transition-all duration-300"
               >
                 Browse All Chocolates
                 <HiOutlineArrowRight className="w-4 h-4" />
@@ -521,22 +505,20 @@ const CollectionPage = () => {
 
       <SectionDivider />
 
-      {/* ══════════════════════════════════════════
-          SECTION 3 — GIFTING
-      ══════════════════════════════════════════ */}
-      <section id="gifting" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
+      {/* SECTION 3 — GIFTING */}
+      <section id="gifting" className="py-12 sm:py-20 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
         <SectionHeader
           title="Gifting Collection"
           subtitle="Curated Gift Sets"
           href="/gifting"
           accentColor="#a3482a"
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {loading.gifting
             ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
             : giftItems.length === 0
-            ? <EmptyState icon={HiOutlineGift} message="No gift sets added yet. Check back soon!" />
-            : giftItems.slice(0, 4).map((item, i) => (
+              ? <EmptyState icon={HiOutlineGift} message="No gift sets added yet. Check back soon!" />
+              : giftItems.slice(0, 4).map((item, i) => (
                 <ProductCard
                   key={item._id}
                   item={item}
@@ -555,11 +537,11 @@ const CollectionPage = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-10 flex justify-center"
+            className="mt-8 sm:mt-10 flex justify-center"
           >
             <Link
               to="/gifting"
-              className="inline-flex items-center gap-2 px-8 py-3 border-2 border-chocolate-800 text-chocolate-800 font-semibold rounded-full hover:bg-chocolate-800 hover:text-white transition-all duration-300"
+              className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 border-2 border-chocolate-800 text-chocolate-800 text-sm sm:text-base font-semibold rounded-full hover:bg-chocolate-800 hover:text-white transition-all duration-300"
             >
               Browse All Gift Sets
               <HiOutlineArrowRight className="w-4 h-4" />
@@ -568,35 +550,32 @@ const CollectionPage = () => {
         )}
       </section>
 
-      {/* ══════════════════════════════════════════
-          WORKSHOP FOOTER BANNER
-      ══════════════════════════════════════════ */}
-      <section className="bg-gradient-to-r from-chocolate-900 to-primary-900 py-16 px-4 text-center">
+      {/* WORKSHOP FOOTER BANNER */}
+      <section className="bg-gradient-to-r from-chocolate-900 to-primary-900 py-12 sm:py-16 px-4 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <p className="text-gold-400 text-xs font-semibold tracking-widest uppercase mb-3">
+          <p className="text-gold-400 text-[10px] sm:text-xs font-semibold tracking-widest uppercase mb-3">
             Learn · Create · Celebrate
           </p>
-          <h2 className="text-2xl sm:text-3xl font-heading font-bold text-white mb-3">
+          <h2 className="text-xl sm:text-3xl font-heading font-bold text-white mb-3">
             Want to create something together?
           </h2>
-          <p className="text-cream-300 mb-8 max-w-xl mx-auto">
+          <p className="text-cream-300 text-sm sm:text-base mb-6 sm:mb-8 max-w-xl mx-auto">
             Join our workshops and learn the art of chocolate-making and painting from our master artisans.
           </p>
           <Link
             to="/workshops"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+            className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-white text-sm sm:text-base font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
           >
             Join a Workshop
-            <HiOutlineArrowRight className="w-5 h-5" />
+            <HiOutlineArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </Link>
         </motion.div>
       </section>
-
     </div>
   )
 }

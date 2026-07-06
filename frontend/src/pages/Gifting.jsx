@@ -137,11 +137,10 @@ const Gifting = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                      selectedCategory === cat
-                        ? 'bg-gold-500 text-white shadow-md'
-                        : 'bg-cream-100 text-chocolate-700 hover:bg-cream-200'
-                    }`}
+                    className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
+                      ? 'bg-gold-500 text-white shadow-md'
+                      : 'bg-cream-100 text-chocolate-700 hover:bg-cream-200'
+                      }`}
                   >
                     {cat}
                   </motion.button>
@@ -163,8 +162,7 @@ const Gifting = () => {
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
-            >
+              className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8"            >
               {filtered.map((item) => {
                 const inWish = isInWishlist?.(item._id)
                 return (
@@ -194,9 +192,8 @@ const Gifting = () => {
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           onClick={(e) => handleWishlist(e, item._id)}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
-                            inWish ? 'bg-gold-500 text-white' : 'bg-white text-gold-500'
-                          }`}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${inWish ? 'bg-gold-500 text-white' : 'bg-white text-gold-500'
+                            }`}
                         >
                           {inWish ? <HiHeart className="w-6 h-6" /> : <HiOutlineHeart className="w-6 h-6" />}
                         </motion.button>
@@ -239,41 +236,47 @@ const Gifting = () => {
                       )}
                     </div>
 
-                    <div className="p-6">
-                      <h3 className="font-heading font-bold text-xl text-chocolate-900 mb-1 group-hover:text-gold-600 transition-colors">
+                    <div className="p-3 sm:p-6">
+                      <h3 className="font-heading font-bold text-sm sm:text-xl text-chocolate-900 mb-0.5 sm:mb-1 line-clamp-1 group-hover:text-primary-600 transition-colors">
                         {item.title}
                       </h3>
+                      {item.artist && (
+                        <p className="text-chocolate-500 text-[10px] sm:text-sm mb-1 sm:mb-3">by {item.artist}</p>
+                      )}
                       {item.shortDescription && (
-                        <p className="text-chocolate-500 text-sm mb-3 line-clamp-2">
+                        <p className="hidden sm:block text-chocolate-400 text-sm mb-4 line-clamp-2">
                           {item.shortDescription}
                         </p>
                       )}
 
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between mb-2 sm:mb-4">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           {item.price > 0 && (
-                            <span className="text-xl font-bold text-gold-600">₹{item.price}</span>
+                            <span className="text-sm sm:text-xl font-bold text-primary-600">
+                              ₹{item.price}
+                            </span>
                           )}
                           {item.originalPrice && (
-                            <span className="text-sm text-chocolate-400 line-through">
+                            <span className="text-[10px] sm:text-sm text-chocolate-400 line-through">
                               ₹{item.originalPrice}
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-1 text-chocolate-400">
-                          <span className="text-sm">{item.likes + (inWish ? 1 : 0)}</span>
+                          <HiOutlineHeart className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="text-[10px] sm:text-sm">{item.likes || 0}</span>
                         </div>
                       </div>
 
-                      {/* ── Action buttons ── */}
-                      <div className="flex gap-2 pt-4 border-t border-cream-100">
+                      {/* ── Action buttons — Stack on mobile ── */}
+                      <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 pt-2 sm:pt-4 border-t border-cream-100">
                         <motion.button
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
                           onClick={(e) => handleCart(e, item._id)}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full border-2 border-gold-500 text-gold-600 font-semibold text-sm hover:bg-gold-50 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-1.5 sm:py-2.5 rounded-full border-2 border-primary-500 text-primary-600 font-semibold text-[10px] sm:text-sm hover:bg-primary-50 transition-colors"
                         >
-                          <HiOutlineShoppingBag className="w-4 h-4" />
+                          <HiOutlineShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
                           Add to Cart
                         </motion.button>
 
@@ -281,9 +284,9 @@ const Gifting = () => {
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
                           onClick={(e) => handleBuyNow(e, item)}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full bg-gold-500 text-white font-semibold text-sm hover:bg-gold-600 transition-colors shadow-md"
+                          className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-1.5 sm:py-2.5 rounded-full bg-primary-500 text-white font-semibold text-[10px] sm:text-sm hover:bg-primary-600 transition-colors shadow-md"
                         >
-                          <HiOutlineBolt className="w-4 h-4" />
+                          <HiOutlineBolt className="w-3 h-3 sm:w-4 sm:h-4" />
                           Buy Now
                         </motion.button>
                       </div>

@@ -3,7 +3,8 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const AuthContext = createContext()
 
 // ============ API HELPER ============
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+// ⭐ FIXED: Include /api prefix to match backend routes
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const apiFetch = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token')
@@ -89,12 +90,12 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   // ✅ Login
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     setIsLoading(true)
     try {
       const res = await apiFetch('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       })
 
       const data = await res.json()
@@ -122,12 +123,11 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // ✅ Signup — now accepts referralCode
+  // ✅ Signup
   const signup = async (name, email, password, referralCode) => {
     setIsLoading(true)
     try {
       const payload = { name, email, password }
-      // ⭐ Only include referralCode if provided (avoid sending empty strings)
       if (referralCode && referralCode.trim()) {
         payload.referralCode = referralCode.trim().toUpperCase()
       }
@@ -162,12 +162,11 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // ✅ Google Login/Signup — now accepts referralCode
+  // ✅ Google Login/Signup
   const googleLogin = async (credential, referralCode) => {
     setIsLoading(true)
     try {
       const payload = { credential }
-      // ⭐ Only include referralCode if provided
       if (referralCode && referralCode.trim()) {
         payload.referralCode = referralCode.trim().toUpperCase()
       }

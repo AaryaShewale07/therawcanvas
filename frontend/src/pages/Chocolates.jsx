@@ -1,7 +1,7 @@
 // src/pages/Chocolates.jsx
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { pageTransition, staggerContainer, staggerItem } from '../utils/animations'
 import {
   HiHeart,
@@ -53,24 +53,28 @@ const Chocolates = () => {
   })
 
   const handleWishlist = (e, id) => {
+    e.preventDefault()
     e.stopPropagation()
     if (!user) { openLoginModal(); return }
     toggleWishlist(id)
   }
 
   const handleCart = (e, id) => {
+    e.preventDefault()
     e.stopPropagation()
     if (!user) { openLoginModal(); return }
     addToCart(id, 1)
   }
 
   const handleView = (e, id) => {
+    e.preventDefault()
     e.stopPropagation()
     navigate(`/product/${id}`)
   }
 
   /* ── Buy Now: navigate to checkout with product state (NO cart add) ── */
   const handleBuyNow = (e, product) => {
+    e.preventDefault()
     e.stopPropagation()
     if (!user) { openLoginModal(); return }
     navigate('/checkout', {
@@ -107,7 +111,7 @@ const Chocolates = () => {
                 placeholder="Search chocolates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white rounded-full shadow-elegant border-2 border-transparent focus:border-primary-500 focus:outline-none"
+                className="w-full pl-12 pr-4 py-4 bg-white rounded-full shadow-elegant border-2 border-transparent focus:border-chocolate-700 focus:outline-none"
               />
             </div>
           </motion.div>
@@ -135,11 +139,10 @@ const Chocolates = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                      selectedCategory === cat
-                        ? 'bg-chocolate-700 text-white shadow-md'
-                        : 'bg-cream-100 text-chocolate-700 hover:bg-cream-200'
-                    }`}
+                    className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
+                      ? 'bg-chocolate-700 text-white shadow-md'
+                      : 'bg-cream-100 text-chocolate-700 hover:bg-cream-200'
+                      }`}
                   >
                     {cat}
                   </motion.button>
@@ -161,7 +164,7 @@ const Chocolates = () => {
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
+              className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8"
             >
               {filtered.map((item) => {
                 const inWish = isInWishlist?.(item._id)
@@ -172,120 +175,131 @@ const Chocolates = () => {
                     whileHover={{ y: -10 }}
                     className="group bg-white rounded-3xl overflow-hidden shadow-elegant hover:shadow-elegant-lg transition-all duration-500"
                   >
-                    <div className="relative aspect-[4/5] overflow-hidden bg-cream-100">
-                      {item.images?.[0] ? (
-                        <img
-                          src={item.images[0].url}
-                          alt={item.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-chocolate-300">
-                          No image
+                    <Link to={`/product/${item._id}`}>
+                      <div className="relative aspect-[4/5] overflow-hidden bg-cream-100">
+                        {item.images?.[0] ? (
+                          <img
+                            src={item.images[0].url}
+                            alt={item.title}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-chocolate-300">
+                            No image
+                          </div>
+                        )}
+
+                        <div className="absolute inset-0 bg-gradient-to-t from-chocolate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => handleWishlist(e, item._id)}
+                            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${inWish
+                              ? 'bg-chocolate-700 text-white'
+                              : 'bg-white text-chocolate-700 hover:bg-chocolate-50'
+                              }`}
+                          >
+                            {inWish ? (
+                              <HiHeart className="w-6 h-6" />
+                            ) : (
+                              <HiOutlineHeart className="w-6 h-6" />
+                            )}
+                          </motion.button>
+
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => handleView(e, item._id)}
+                            className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-cream-100 transition-colors"
+                          >
+                            <HiOutlineEye className="w-6 h-6 text-chocolate-700" />
+                          </motion.button>
+
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => handleCart(e, item._id)}
+                            className="w-12 h-12 bg-chocolate-700 rounded-full flex items-center justify-center shadow-lg hover:bg-chocolate-800 transition-colors"
+                          >
+                            <HiOutlineShoppingBag className="w-6 h-6 text-white" />
+                          </motion.button>
                         </div>
-                      )}
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-chocolate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={(e) => handleWishlist(e, item._id)}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
-                            inWish ? 'bg-chocolate-700 text-white' : 'bg-white text-chocolate-700'
-                          }`}
-                        >
-                          {inWish ? <HiHeart className="w-6 h-6" /> : <HiOutlineHeart className="w-6 h-6" />}
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={(e) => handleView(e, item._id)}
-                          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg"
-                        >
-                          <HiOutlineEye className="w-6 h-6 text-chocolate-700" />
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={(e) => handleCart(e, item._id)}
-                          className="w-12 h-12 bg-chocolate-700 rounded-full flex items-center justify-center shadow-lg"
-                        >
-                          <HiOutlineShoppingBag className="w-6 h-6 text-white" />
-                        </motion.button>
-                      </div>
-
-                      <div className="absolute top-4 left-4 flex flex-col gap-2">
-                        {item.isNew && (
-                          <span className="px-3 py-1 bg-gold-500 text-chocolate-900 text-xs font-bold rounded-full">
-                            NEW
-                          </span>
-                        )}
-                        {item.originalPrice && (
-                          <span className="px-3 py-1 bg-primary-500 text-white text-xs font-bold rounded-full">
-                            SALE
-                          </span>
-                        )}
-                      </div>
-                      {item.subCategory && (
-                        <span className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-semibold text-chocolate-700">
-                          {item.subCategory}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="p-6">
-                      <h3 className="font-heading font-bold text-xl text-chocolate-900 mb-1 group-hover:text-chocolate-700 transition-colors">
-                        {item.title}
-                      </h3>
-                      {item.shortDescription && (
-                        <p className="text-chocolate-500 text-sm mb-3 line-clamp-2">
-                          {item.shortDescription}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          {item.price > 0 && (
-                            <span className="text-xl font-bold text-chocolate-700">₹{item.price}</span>
+                        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1 sm:gap-2">
+                          {item.isNew && (
+                            <span className="px-1.5 py-0.5 sm:px-3 sm:py-1 bg-gold-500 text-chocolate-900 text-[9px] sm:text-xs font-bold rounded-full">
+                              NEW
+                            </span>
                           )}
                           {item.originalPrice && (
-                            <span className="text-sm text-chocolate-400 line-through">
-                              ₹{item.originalPrice}
+                            <span className="px-1.5 py-0.5 sm:px-3 sm:py-1 bg-primary-500 text-white text-[9px] sm:text-xs font-bold rounded-full">
+                              SALE
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 text-chocolate-400">
-                          <span className="text-sm">{item.likes + (inWish ? 1 : 0)}</span>
+
+                        {item.subCategory && (
+                          <span className="absolute top-2 right-2 sm:top-4 sm:right-4 px-1.5 py-0.5 sm:px-3 sm:py-1 bg-white/90 backdrop-blur-sm rounded-full text-[9px] sm:text-xs font-semibold text-chocolate-700">
+                            {item.subCategory}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-3 sm:p-6">
+                        <h3 className="font-heading font-bold text-sm sm:text-xl text-chocolate-900 mb-0.5 sm:mb-1 line-clamp-1 group-hover:text-chocolate-700 transition-colors">
+                          {item.title}
+                        </h3>
+                        {item.shortDescription && (
+                          <p className="hidden sm:block text-chocolate-400 text-sm mb-4 line-clamp-2">
+                            {item.shortDescription}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between mb-2 sm:mb-4">
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            {item.price > 0 && (
+                              <span className="text-sm sm:text-xl font-bold text-chocolate-700">
+                                ₹{item.price}
+                              </span>
+                            )}
+                            {item.originalPrice && (
+                              <span className="text-[10px] sm:text-sm text-chocolate-400 line-through">
+                                ₹{item.originalPrice}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 text-chocolate-400">
+                            <HiOutlineHeart className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="text-[10px] sm:text-sm">{(item.likes || 0) + (inWish ? 1 : 0)}</span>
+                          </div>
+                        </div>
+
+                        {/* ── Action buttons — Stack on mobile ── */}
+                        <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 pt-2 sm:pt-4 border-t border-cream-100">
+                          <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={(e) => handleCart(e, item._id)}
+                            className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-1.5 sm:py-2.5 rounded-full border-2 border-chocolate-700 text-chocolate-700 font-semibold text-[10px] sm:text-sm hover:bg-chocolate-50 transition-colors"
+                          >
+                            <HiOutlineShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
+                            Add to Cart
+                          </motion.button>
+
+                          <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={(e) => handleBuyNow(e, item)}
+                            className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-1.5 sm:py-2.5 rounded-full bg-chocolate-700 text-white font-semibold text-[10px] sm:text-sm hover:bg-chocolate-800 transition-colors shadow-md"
+                          >
+                            <HiOutlineBolt className="w-3 h-3 sm:w-4 sm:h-4" />
+                            Buy Now
+                          </motion.button>
                         </div>
                       </div>
-
-                      {/* ── Action buttons ── */}
-                      <div className="flex gap-2 pt-4 border-t border-cream-100">
-                        <motion.button
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={(e) => handleCart(e, item._id)}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full border-2 border-chocolate-700 text-chocolate-700 font-semibold text-sm hover:bg-chocolate-50 transition-colors"
-                        >
-                          <HiOutlineShoppingBag className="w-4 h-4" />
-                          Add to Cart
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={(e) => handleBuyNow(e, item)}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full bg-chocolate-700 text-white font-semibold text-sm hover:bg-chocolate-800 transition-colors shadow-md"
-                        >
-                          <HiOutlineBolt className="w-4 h-4" />
-                          Buy Now
-                        </motion.button>
-                      </div>
-                    </div>
+                    </Link>
                   </motion.div>
                 )
               })}

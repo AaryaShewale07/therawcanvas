@@ -78,7 +78,8 @@ const PromoBanner = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
-                className={`relative w-full bg-gradient-to-r ${theme.bg} overflow-hidden shadow-md`}      >
+                className={`relative w-full bg-gradient-to-r ${theme.bg} overflow-hidden shadow-md`}
+            >
                 {/* Pattern overlay */}
                 <div
                     className="absolute inset-0 opacity-10 pointer-events-none"
@@ -97,9 +98,9 @@ const PromoBanner = () => {
                     </div>
                 )}
 
-                {/* ⭐ Reduced vertical padding (py-1.5 / py-2) + wider horizontal padding */}
-                <div className="relative w-full px-4 sm:px-6 lg:px-10 py-1.5 sm:py-9">
-                    <div className="flex items-center justify-center gap-3 sm:gap-5 flex-wrap text-center">
+                {/* ⭐ Compact mobile layout with proper spacing */}
+                <div className="relative w-full px-3 sm:px-6 lg:px-10 pt-5 pb-7 sm:py-9">
+                    <div className="flex items-center justify-center gap-1.5 sm:gap-5 flex-nowrap sm:flex-wrap text-center">
                         {banners.length > 1 && (
                             <button
                                 onClick={prev}
@@ -110,35 +111,32 @@ const PromoBanner = () => {
                             </button>
                         )}
 
-                        {banner.icon && (
-                            <span className="text-3xl sm:text-4xl flex-shrink-0">
-                                {banner.icon}
-                            </span>
-                        )}
-
+                        {/* Smaller badge on mobile */}
                         {banner.badge && (
                             <span
-                                className={`${theme.badge} px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md whitespace-nowrap flex-shrink-0`}
+                                className={`${theme.badge} px-1.5 py-0.5 sm:px-2.5 rounded-full text-[9px] sm:text-xs font-bold uppercase tracking-wide shadow-md whitespace-nowrap flex-shrink-0 mt-3.5 sm:mt-0`}
                             >
                                 {banner.badge}
                             </span>
                         )}
 
-                        <div className="text-white">
-                            <p className="text-lg sm:text-xl font-bold leading-tight">
+                        {/* MUCH smaller text on mobile + truncate long text */}
+                        <div className="text-white min-w-0 flex-1 sm:flex-initial mt-3.5 sm:mt-0">
+                            <p className="text-[11px] sm:text-xl font-bold leading-tight truncate">
                                 {banner.title}
                             </p>
                             {banner.subtitle && (
-                                <p className="text-sm sm:text-base text-white/90 leading-tight">
+                                <p className="text-[9px] sm:text-base text-white/90 leading-tight truncate">
                                     {banner.subtitle}
                                 </p>
                             )}
                         </div>
 
+                        {/* Compact button on mobile */}
                         {banner.buttonText && banner.buttonLink && (
                             <Link
                                 to={banner.buttonLink}
-                                className={`${theme.btn} px-3.5 py-1 rounded-full text-xs font-bold shadow-md hover:shadow-lg transition-all hover:scale-105 whitespace-nowrap flex-shrink-0`}
+                                className={`${theme.btn} px-2 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[9px] sm:text-xs font-bold shadow-md hover:shadow-lg transition-all hover:scale-105 whitespace-nowrap flex-shrink-0 mt-3.5 sm:mt-0`}
                             >
                                 {banner.buttonText} →
                             </Link>
@@ -157,17 +155,17 @@ const PromoBanner = () => {
 
                     {/* Compact dots */}
                     {banners.length > 1 && (
-                        <div className="flex justify-center gap-1 mt-1">
+                        <div className="flex justify-center gap-1 mt-1.5 sm:mt-1">
                             {banners.map((_, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setCurrentIdx(idx)}
                                     className={`h-0.5 rounded-full transition-all
-                    ${idx === currentIdx
+                                        ${idx === currentIdx
                                             ? 'w-5 bg-white'
                                             : 'w-1.5 bg-white/40 hover:bg-white/60'
                                         }
-                  `}
+                                    `}
                                     aria-label={`Go to banner ${idx + 1}`}
                                 />
                             ))}

@@ -9,6 +9,7 @@ import cloudinary from '../config/cloudinary.js'
 import { OAuth2Client } from 'google-auth-library'
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+
 const generateToken = (id, rememberMe) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: rememberMe ? '30d' : '7d',
@@ -57,15 +58,18 @@ const applyReferralOnSignup = async (newUser, referralCode) => {
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, referralCode } = req.body
 
-  const exists = await User.findOne({ email })
+  const exists = await User.findOne({ email: email.toLowerCase() })
   if (exists) {
     res.status(400)
     throw new Error('User already exists')
   }
 
-  const user = await User.create({ name, email, password })
+  const user = await User.create({
+    name,
+    email: email.toLowerCase(),
+    password,
+  })
 
-  // Apply referral if provided
   await applyReferralOnSignup(user, referralCode)
 
   try {
@@ -88,11 +92,17 @@ export const register = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
   const { email, password, rememberMe } = req.body
 
-  const user = await User.findOne({ email }).select('+password')
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+password')
 
   if (!user) {
     res.status(401)
     throw new Error('Invalid credentials')
+  }
+
+  // ⭐ NEW: Handle Google-only users trying to login with password
+  if (user.authProvider === 'google' && !user.password) {
+    res.status(401)
+    throw new Error('This account uses Google Sign-In. Please continue with Google.')
   }
 
   const isMatch = await user.comparePassword(password)
@@ -115,7 +125,9 @@ export const login = asyncHandler(async (req, res) => {
 export const verifyBackupCode = asyncHandler(async (req, res) => {
   const { email, code } = req.body
 
-  const user = await User.findOne({ email }).select('+twoFactorAuth.backupCodes')
+  const user = await User.findOne({ email: email.toLowerCase() }).select(
+    '+twoFactorAuth.backupCodes'
+  )
 
   if (!user) {
     res.status(404)
@@ -151,9 +163,31 @@ export const logout = asyncHandler(async (req, res) => {
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body
 
-  const user = await User.findOne({ email })
+  // ⭐ NEW: Input validation
+  if (!email) {
+    res.status(400)
+    throw new Error('Email is required')
+  }
 
+  // ⭐ NEW: Check FRONTEND_URL is configured
+  if (!process.env.FRONTEND_URL) {
+    console.error('❌ FRONTEND_URL is not set in .env')
+    res.status(500)
+    throw new Error('Server configuration error. Please contact support.')
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() })
+
+  // Security: Don't reveal if email exists
   if (!user) {
+    return res.json({
+      success: true,
+      message: 'If that email exists, a reset link has been sent.',
+    })
+  }
+
+  // ⭐ NEW: Handle Google-only users (no password to reset)
+  if (user.authProvider === 'google' && !user.password) {
     return res.json({
       success: true,
       message: 'If that email exists, a reset link has been sent.',
@@ -167,7 +201,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000)
   await user.save({ validateBeforeSave: false })
 
-  const resetURL = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`
+  const resetURL = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #fdf8f4; border-radius: 16px;">
@@ -190,11 +224,27 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     </div>
   `
 
-  await sendEmail({
-    to: user.email,
-    subject: 'Password Reset Link — TheRawCanvasStudio (valid 10 min)',
-    html,
-  })
+  // ⭐ NEW: Try-catch prevents 500 crashes if email fails
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Password Reset Link — TheRawCanvasStudio (valid 10 min)',
+      html,
+    })
+    console.log('✅ Password reset email sent to:', user.email)
+  } catch (emailErr) {
+    console.error('❌ Password reset email failed:', emailErr.message)
+
+    // Clear the token so user can try again
+    user.passwordResetToken = null
+    user.passwordResetExpires = null
+    await user.save({ validateBeforeSave: false })
+
+    res.status(500)
+    throw new Error(
+      'Failed to send reset email. Please try again later or contact support.'
+    )
+  }
 
   res.json({
     success: true,
@@ -247,6 +297,16 @@ export const updatePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body
 
   const user = await User.findById(req.user._id).select('+password')
+
+  // ⭐ NEW: Handle Google users setting a password for the first time
+  if (user.authProvider === 'google' && !user.password) {
+    user.password = newPassword
+    await user.save()
+    return res.json({
+      success: true,
+      message: 'Password set successfully. You can now log in with email/password too.',
+    })
+  }
 
   const isMatch = await user.comparePassword(currentPassword)
   if (!isMatch) {
@@ -405,6 +465,13 @@ export const googleAuth = asyncHandler(async (req, res) => {
     throw new Error('No Google credential provided')
   }
 
+  // ⭐ NEW: Check GOOGLE_CLIENT_ID is configured
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    console.error('❌ GOOGLE_CLIENT_ID is not set in .env')
+    res.status(500)
+    throw new Error('Server configuration error')
+  }
+
   let payload
   try {
     const ticket = await googleClient.verifyIdToken({
@@ -413,6 +480,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
     })
     payload = ticket.getPayload()
   } catch (err) {
+    console.error('❌ Google token verification failed:', err.message)
     res.status(401)
     throw new Error('Invalid Google token')
   }
@@ -437,7 +505,6 @@ export const googleAuth = asyncHandler(async (req, res) => {
     })
     isNewUser = true
 
-    // Apply referral for new Google users
     await applyReferralOnSignup(user, referralCode)
 
     try {
@@ -450,6 +517,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
       console.error('❌ Welcome email failed:', emailErr.message)
     }
   } else if (!user.googleId) {
+    // Link Google account to existing email account
     user.googleId = googleId
     if (!user.avatar) user.avatar = picture
     await user.save({ validateBeforeSave: false })

@@ -60,7 +60,7 @@ const Settings = () => {
         try {
             const token = localStorage.getItem('token')
 
-            const res = await fetch(import.meta.env.VITE_API_URL + '/api/settings', {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/settings', {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -79,7 +79,7 @@ const Settings = () => {
         try {
             const token = localStorage.getItem('token')
 
-            const res = await fetch(import.meta.env.VITE_API_URL + '/api/settings/sessions', {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/settings/sessions', {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -119,7 +119,7 @@ const Settings = () => {
         try {
             const token = localStorage.getItem('token')
 
-            const res = await fetch(import.meta.env.VITE_API_URL + '/api/auth/password', {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/auth/password', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ const Settings = () => {
         try {
             const token = localStorage.getItem('token')
 
-            const res = await fetch(import.meta.env.VITE_API_URL + '/api/settings/2fa/enable', {    
+            const res = await fetch(import.meta.env.VITE_API_URL + '/settings/2fa/enable', {    
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -178,7 +178,7 @@ const Settings = () => {
         try {
             const token = localStorage.getItem('token')
 
-            const res = await fetch(import.meta.env.VITE_API_URL + '/api/settings/2fa/disable', {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/settings/2fa/disable', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -207,7 +207,7 @@ const Settings = () => {
         try {
             const token = localStorage.getItem('token')
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/settings/sessions/${sessionId}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/settings/sessions/${sessionId}`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -260,7 +260,7 @@ const Settings = () => {
         try {
             const token = localStorage.getItem('token')
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/settings/delete-account`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/settings/delete-account`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

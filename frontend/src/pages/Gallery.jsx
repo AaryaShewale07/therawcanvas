@@ -20,24 +20,6 @@ const isVideo = (url) => {
   return /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(url) || url.includes('/video/')
 }
 
-// ─── Media Component: Renders either image OR muted video ────────────────────
-const Media = ({ src, alt, className = '', autoPlay = false }) => {
-  if (isVideo(src)) {
-    return (
-      <video
-        src={src}
-        muted
-        autoPlay={autoPlay}
-        loop
-        playsInline
-        preload="metadata"
-        className={className}
-      />
-    )
-  }
-  return <img src={src} alt={alt || ''} className={className} />
-}
-
 // ─── Lightbox (browses all media in a single event) ─────────────────────────
 const Lightbox = ({ event, startIndex, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(startIndex)
@@ -88,7 +70,6 @@ const Lightbox = ({ event, startIndex, onClose }) => {
           </button>
 
           <div className="flex flex-col md:flex-row">
-            {/* Media area */}
             <div className="relative md:w-2/3 bg-black flex items-center justify-center min-h-[300px] md:min-h-[500px]">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -137,14 +118,12 @@ const Lightbox = ({ event, startIndex, onClose }) => {
                 </>
               )}
 
-              {/* Counter */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full">
                 {currentIndex + 1} / {media.length}
                 {currentIsVideo && ' 🎬'}
               </div>
             </div>
 
-            {/* Info Panel */}
             <div className="md:w-1/3 p-6 flex flex-col">
               <div className="flex-1">
                 <span className="inline-block bg-gold-500/20 text-gold-400 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider mb-4">
@@ -174,7 +153,6 @@ const Lightbox = ({ event, startIndex, onClose }) => {
                 )}
               </div>
 
-              {/* Thumbnail Strip (browse within event) */}
               {media.length > 1 && (
                 <div className="mt-4 pt-4 border-t border-chocolate-700">
                   <p className="text-chocolate-400 text-xs uppercase tracking-wider mb-2">
@@ -188,10 +166,9 @@ const Lightbox = ({ event, startIndex, onClose }) => {
                           key={idx}
                           onClick={() => setCurrentIndex(idx)}
                           className={`relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition
-                            ${
-                              currentIndex === idx
-                                ? 'border-gold-400 scale-105'
-                                : 'border-transparent opacity-60 hover:opacity-100'
+                            ${currentIndex === idx
+                              ? 'border-gold-400 scale-105'
+                              : 'border-transparent opacity-60 hover:opacity-100'
                             }
                           `}
                         >
@@ -229,13 +206,12 @@ const Lightbox = ({ event, startIndex, onClose }) => {
   )
 }
 
-// ─── Event Card (one card per event) ──────────────────────────────────────────
+// ─── Event Card (COMPACT for mobile) ──────────────────────────────────────────
 const EventCard = ({ event, onOpen }) => {
   const media = event.images || []
   const mediaCount = media.length
   const videoCount = media.filter(isVideo).length
 
-  // Reusable media tile (image or auto-playing muted video)
   const MediaTile = ({ src, withPlayIcon = false }) => {
     const itemIsVideo = isVideo(src)
     return (
@@ -258,8 +234,8 @@ const EventCard = ({ event, onOpen }) => {
           />
         )}
         {withPlayIcon && itemIsVideo && (
-          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full p-1.5">
-            <HiOutlinePlay className="w-3 h-3 text-white" />
+          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-black/60 backdrop-blur-sm rounded-full p-1 sm:p-1.5">
+            <HiOutlinePlay className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
           </div>
         )}
       </div>
@@ -270,7 +246,7 @@ const EventCard = ({ event, onOpen }) => {
     if (mediaCount === 0) {
       return (
         <div className="aspect-[4/3] bg-cream-100 flex items-center justify-center">
-          <HiOutlinePhotograph className="w-12 h-12 text-chocolate-300" />
+          <HiOutlinePhotograph className="w-8 h-8 sm:w-12 sm:h-12 text-chocolate-300" />
         </div>
       )
     }
@@ -311,7 +287,6 @@ const EventCard = ({ event, onOpen }) => {
       )
     }
 
-    // 4+ media: collage with "+N more" overlay
     return (
       <div className="grid grid-cols-2 gap-0.5 aspect-[4/3]">
         <div className="overflow-hidden row-span-2">
@@ -324,7 +299,7 @@ const EventCard = ({ event, onOpen }) => {
           <MediaTile src={media[2]} withPlayIcon />
           {mediaCount > 3 && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <span className="text-white text-2xl font-bold">
+              <span className="text-white text-lg sm:text-2xl font-bold">
                 +{mediaCount - 3}
               </span>
             </div>
@@ -339,36 +314,34 @@ const EventCard = ({ event, onOpen }) => {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
+      className="group bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
       onClick={onOpen}
     >
-      {/* Media collage */}
       <div className="relative">
         {renderMediaGrid()}
 
-        {/* Category badge */}
-        <div className="absolute top-3 left-3">
+        {/* Category badge - smaller on mobile */}
+        <div className="absolute top-1.5 left-1.5 sm:top-3 sm:left-3">
           <span
-            className={`backdrop-blur-sm text-xs px-2 py-1 rounded-full font-medium
-              ${
-                event.category === 'Workshop'
-                  ? 'bg-purple-900/70 text-purple-200'
-                  : 'bg-chocolate-900/70 text-gold-300'
+            className={`backdrop-blur-sm text-[9px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full font-medium
+              ${event.category === 'Workshop'
+                ? 'bg-purple-900/70 text-purple-200'
+                : 'bg-chocolate-900/70 text-gold-300'
               }
             `}
           >
-            {event.category === 'Workshop' ? '🎨' : '⭐'} {event.category}
+            {event.category === 'Workshop' ? '🎨' : '⭐'}{' '}
+            <span className="hidden sm:inline">{event.category}</span>
           </span>
         </div>
 
-        {/* Media count badge */}
+        {/* Media count badge - smaller on mobile */}
         {mediaCount > 1 && (
-          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
-            {videoCount > 0 ? `🎬 ${videoCount} · 📷 ${mediaCount - videoCount}` : `📷 ${mediaCount}`}
+          <div className="absolute top-1.5 right-1.5 sm:top-3 sm:right-3 bg-black/60 backdrop-blur-sm text-white text-[9px] sm:text-xs font-medium px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full flex items-center gap-1">
+            {videoCount > 0 ? `🎬${videoCount} 📷${mediaCount - videoCount}` : `📷${mediaCount}`}
           </div>
         )}
 
-        {/* Hover overlay */}
         <div className="absolute inset-0 bg-chocolate-900/0 group-hover:bg-chocolate-900/40 transition-all duration-300 flex items-end justify-center pb-4 pointer-events-none">
           <span className="opacity-0 group-hover:opacity-100 transition bg-white/95 text-chocolate-800 text-xs font-bold px-4 py-2 rounded-full">
             View {mediaCount > 1 ? `all ${mediaCount}` : 'media'}
@@ -376,20 +349,20 @@ const EventCard = ({ event, onOpen }) => {
         </div>
       </div>
 
-      {/* Info */}
-      <div className="p-4">
-        <h3 className="font-heading font-bold text-chocolate-900 text-base leading-snug line-clamp-1 mb-1">
+      {/* Info - compact on mobile */}
+      <div className="p-2 sm:p-4">
+        <h3 className="font-heading font-bold text-chocolate-900 text-xs sm:text-base leading-snug line-clamp-1 mb-0.5 sm:mb-1">
           {event.title}
         </h3>
         {event.description && (
-          <p className="text-xs text-chocolate-500 line-clamp-2 mb-2">
+          <p className="hidden sm:block text-xs text-chocolate-500 line-clamp-2 mb-2">
             {event.description}
           </p>
         )}
-        <p className="text-xs text-chocolate-400">{event.date}</p>
+        <p className="text-[10px] sm:text-xs text-chocolate-400">{event.date}</p>
 
         {event.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
+          <div className="hidden sm:flex flex-wrap gap-1 mt-2">
             {event.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
@@ -423,10 +396,10 @@ const Gallery = () => {
           ...event,
           date: event.date
             ? new Date(event.date).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })
             : '',
         }))
         setEvents(fetched)
@@ -481,7 +454,7 @@ const Gallery = () => {
       exit="exit"
       className="min-h-screen"
     >
-      {/* ── Hero Banner ── */}
+      {/* Hero Banner */}
       <section className="relative py-24 md:py-32 bg-gradient-to-br from-chocolate-900 via-chocolate-800 to-chocolate-900 overflow-hidden">
         <div
           className="absolute inset-0 opacity-10"
@@ -517,7 +490,7 @@ const Gallery = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex flex-wrap justify-center gap-8 mt-10"
+            className="flex flex-wrap justify-center gap-4 sm:gap-8 mt-10"
           >
             {[
               { label: 'Total Events', value: events.length },
@@ -532,42 +505,40 @@ const Gallery = () => {
               },
             ].map((s) => (
               <div key={s.label} className="text-center">
-                <div className="text-3xl font-bold text-gold-400">
+                <div className="text-2xl sm:text-3xl font-bold text-gold-400">
                   {s.value}+
                 </div>
-                <div className="text-cream-300 text-sm">{s.label}</div>
+                <div className="text-cream-300 text-xs sm:text-sm">{s.label}</div>
               </div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* ── Filter & Search ── */}
+      {/* Filter & Search */}
       <section className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-cream-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-between">
             <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
               {CATEGORIES.map((cat) => (
                 <motion.button
                   key={cat}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border
-                    ${
-                      activeCategory === cat
-                        ? 'bg-chocolate-800 text-white border-chocolate-800 shadow-lg'
-                        : 'bg-white text-chocolate-600 border-cream-300 hover:border-chocolate-400 hover:text-chocolate-800'
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 border
+                    ${activeCategory === cat
+                      ? 'bg-chocolate-800 text-white border-chocolate-800 shadow-lg'
+                      : 'bg-white text-chocolate-600 border-cream-300 hover:border-chocolate-400 hover:text-chocolate-800'
                     }
                   `}
                 >
                   {cat}
                   {cat !== 'All' && (
                     <span
-                      className={`ml-2 text-xs px-1.5 py-0.5 rounded-full
-                        ${
-                          activeCategory === cat
-                            ? 'bg-white/20'
-                            : 'bg-cream-100'
+                      className={`ml-1.5 text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full
+                        ${activeCategory === cat
+                          ? 'bg-white/20'
+                          : 'bg-cream-100'
                         }
                       `}
                     >
@@ -579,13 +550,13 @@ const Gallery = () => {
             </div>
 
             <div className="relative w-full sm:w-64">
-              <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-chocolate-400" />
+              <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-chocolate-400" />
               <input
                 type="text"
                 placeholder="Search events..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-cream-300 focus:border-chocolate-500 focus:outline-none focus:ring-2 focus:ring-chocolate-200 text-sm bg-cream-50"
+                className="w-full pl-10 pr-4 py-2 sm:py-2.5 rounded-xl border border-cream-300 focus:border-chocolate-500 focus:outline-none focus:ring-2 focus:ring-chocolate-200 text-xs sm:text-sm bg-cream-50"
               />
               {search && (
                 <button
@@ -598,8 +569,8 @@ const Gallery = () => {
             </div>
           </div>
 
-          <div className="mt-2 flex items-center gap-2 text-xs text-chocolate-500">
-            <HiOutlineFilter className="w-4 h-4" />
+          <div className="mt-2 flex items-center gap-2 text-[10px] sm:text-xs text-chocolate-500">
+            <HiOutlineFilter className="w-3 h-3 sm:w-4 sm:h-4" />
             <span>
               Showing <strong>{visible.length}</strong> of{' '}
               <strong>{filtered.length}</strong> event
@@ -611,9 +582,9 @@ const Gallery = () => {
         </div>
       </section>
 
-      {/* ── Events Grid ── */}
-      <section className="py-12 bg-gradient-to-b from-cream-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Events Grid */}
+      <section className="py-8 sm:py-12 bg-gradient-to-b from-cream-50 to-white">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           {pageLoading ? (
             <div className="flex justify-center py-20">
               <div className="w-12 h-12 border-4 border-chocolate-200 border-t-chocolate-700 rounded-full animate-spin" />
@@ -643,7 +614,7 @@ const Gallery = () => {
             </motion.div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                 {visible.map((event) => (
                   <EventCard
                     key={event._id}
@@ -674,7 +645,7 @@ const Gallery = () => {
         </div>
       </section>
 
-      {/* ── CTA Banner ── */}
+      {/* CTA Banner */}
       <section className="py-16 bg-gradient-to-r from-chocolate-800 to-chocolate-900">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
@@ -710,12 +681,10 @@ const Gallery = () => {
                 👍 Facebook
               </a>
             </div>
-           
           </motion.div>
         </div>
       </section>
 
-      {/* ── Lightbox ── */}
       {lightboxEvent && (
         <Lightbox
           event={lightboxEvent}

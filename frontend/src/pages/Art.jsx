@@ -148,11 +148,10 @@ const Art = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                      selectedCategory === cat
-                        ? 'bg-primary-500 text-white shadow-md'
-                        : 'bg-cream-100 text-chocolate-700 hover:bg-cream-200'
-                    }`}
+                    className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
+                      ? 'bg-primary-500 text-white shadow-md'
+                      : 'bg-cream-100 text-chocolate-700 hover:bg-cream-200'
+                      }`}
                   >
                     {cat}
                   </motion.button>
@@ -177,7 +176,7 @@ const Art = () => {
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
+              className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8"
             >
               {filteredArtworks.map((art) => {
                 const inWishlist = isInWishlist(art._id)
@@ -209,11 +208,10 @@ const Art = () => {
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={(e) => handleWishlistClick(e, art._id)}
-                            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
-                              inWishlist
-                                ? 'bg-red-500 text-white'
-                                : 'bg-white text-red-500 hover:bg-red-50'
-                            }`}
+                            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${inWishlist
+                              ? 'bg-red-500 text-white'
+                              : 'bg-white text-red-500 hover:bg-red-50'
+                              }`}
                           >
                             {inWishlist ? (
                               <HiHeart className="w-6 h-6" />
@@ -241,67 +239,67 @@ const Art = () => {
                           </motion.button>
                         </div>
 
-                        <div className="absolute top-4 left-4 flex flex-col gap-2">
+                        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1 sm:gap-2">
                           {art.isNew && (
-                            <span className="px-3 py-1 bg-gold-500 text-chocolate-900 text-xs font-bold rounded-full">
+                            <span className="px-1.5 py-0.5 sm:px-3 sm:py-1 bg-gold-500 text-chocolate-900 text-[9px] sm:text-xs font-bold rounded-full">
                               NEW
                             </span>
                           )}
                           {art.originalPrice && (
-                            <span className="px-3 py-1 bg-primary-500 text-white text-xs font-bold rounded-full">
+                            <span className="px-1.5 py-0.5 sm:px-3 sm:py-1 bg-primary-500 text-white text-[9px] sm:text-xs font-bold rounded-full">
                               SALE
                             </span>
                           )}
                         </div>
 
                         {art.subCategory && (
-                          <span className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-semibold text-chocolate-700">
+                          <span className="absolute top-2 right-2 sm:top-4 sm:right-4 px-1.5 py-0.5 sm:px-3 sm:py-1 bg-white/90 backdrop-blur-sm rounded-full text-[9px] sm:text-xs font-semibold text-chocolate-700">
                             {art.subCategory}
                           </span>
                         )}
                       </div>
 
-                      <div className="p-6">
-                        <h3 className="font-heading font-bold text-xl text-chocolate-900 mb-1 group-hover:text-primary-600 transition-colors">
+                      <div className="p-3 sm:p-6">
+                        <h3 className="font-heading font-bold text-sm sm:text-xl text-chocolate-900 mb-0.5 sm:mb-1 line-clamp-1 group-hover:text-primary-600 transition-colors">
                           {art.title}
                         </h3>
                         {art.artist && (
-                          <p className="text-chocolate-500 text-sm mb-3">by {art.artist}</p>
+                          <p className="text-chocolate-500 text-[10px] sm:text-sm mb-1 sm:mb-3">by {art.artist}</p>
                         )}
                         {art.shortDescription && (
-                          <p className="text-chocolate-400 text-sm mb-4 line-clamp-2">
+                          <p className="hidden sm:block text-chocolate-400 text-sm mb-4 line-clamp-2">
                             {art.shortDescription}
                           </p>
                         )}
 
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between mb-2 sm:mb-4">
+                          <div className="flex items-center gap-1 sm:gap-2">
                             {art.price > 0 && (
-                              <span className="text-xl font-bold text-primary-600">
+                              <span className="text-sm sm:text-xl font-bold text-primary-600">
                                 ₹{art.price}
                               </span>
                             )}
                             {art.originalPrice && (
-                              <span className="text-sm text-chocolate-400 line-through">
+                              <span className="text-[10px] sm:text-sm text-chocolate-400 line-through">
                                 ₹{art.originalPrice}
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-1 text-chocolate-400">
-                            <HiOutlineHeart className="w-4 h-4" />
-                            <span className="text-sm">{art.likes || 0}</span>
+                            <HiOutlineHeart className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="text-[10px] sm:text-sm">{art.likes || 0}</span>
                           </div>
                         </div>
 
-                        {/* ── Action buttons ── */}
-                        <div className="flex gap-2 pt-4 border-t border-cream-100">
+                        {/* ── Action buttons — Stack on mobile ── */}
+                        <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 pt-2 sm:pt-4 border-t border-cream-100">
                           <motion.button
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.97 }}
                             onClick={(e) => handleAddToCart(e, art._id)}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full border-2 border-primary-500 text-primary-600 font-semibold text-sm hover:bg-primary-50 transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-1.5 sm:py-2.5 rounded-full border-2 border-primary-500 text-primary-600 font-semibold text-[10px] sm:text-sm hover:bg-primary-50 transition-colors"
                           >
-                            <HiOutlineShoppingBag className="w-4 h-4" />
+                            <HiOutlineShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
                             Add to Cart
                           </motion.button>
 
@@ -309,9 +307,9 @@ const Art = () => {
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.97 }}
                             onClick={(e) => handleBuyNow(e, art)}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full bg-primary-500 text-white font-semibold text-sm hover:bg-primary-600 transition-colors shadow-md"
+                            className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-1.5 sm:py-2.5 rounded-full bg-primary-500 text-white font-semibold text-[10px] sm:text-sm hover:bg-primary-600 transition-colors shadow-md"
                           >
-                            <HiOutlineBolt className="w-4 h-4" />
+                            <HiOutlineBolt className="w-3 h-3 sm:w-4 sm:h-4" />
                             Buy Now
                           </motion.button>
                         </div>
@@ -321,30 +319,33 @@ const Art = () => {
                 )
               })}
             </motion.div>
-          )}
+          )
+          }
 
-          {!loading && filteredArtworks.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center py-20"
-            >
-              <div className="w-24 h-24 bg-cream-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <HiOutlineSearch className="w-12 h-12 text-chocolate-300" />
-              </div>
-              <h3 className="text-2xl font-heading font-bold text-chocolate-900 mb-2">
-                No artworks found
-              </h3>
-              <p className="text-chocolate-500 mb-6">
-                {artworks.length === 0
-                  ? 'No artworks have been added yet. Check back soon!'
-                  : 'Try adjusting your search or filter criteria'}
-              </p>
-            </motion.div>
-          )}
-        </div>
-      </section>
-    </motion.div>
+          {
+            !loading && filteredArtworks.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-20"
+              >
+                <div className="w-24 h-24 bg-cream-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <HiOutlineSearch className="w-12 h-12 text-chocolate-300" />
+                </div>
+                <h3 className="text-2xl font-heading font-bold text-chocolate-900 mb-2">
+                  No artworks found
+                </h3>
+                <p className="text-chocolate-500 mb-6">
+                  {artworks.length === 0
+                    ? 'No artworks have been added yet. Check back soon!'
+                    : 'Try adjusting your search or filter criteria'}
+                </p>
+              </motion.div>
+            )
+          }
+        </div >
+      </section >
+    </motion.div >
   )
 }
 
