@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const AuthContext = createContext()
 
 // ============ API HELPER ============
-const API_URL = import.meta.env.VITE_API_URL
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"
 
 const apiFetch = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token')
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async (token) => {
     try {
-      const res = await apiFetch('/auth/me')
+      const res = await apiFetch('/api/auth/me')
       const data = await res.json()
 
       if (res.ok) {
