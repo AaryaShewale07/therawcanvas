@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async (token) => {
     try {
-      const res = await apiFetch('/api/auth/me')
+      const res = await apiFetch('/auth/me')
       const data = await res.json()
 
       if (res.ok) {
@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     setIsLoading(true)
     try {
-      const res = await apiFetch('/api/auth/login', {
+      const res = await apiFetch('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       })
@@ -132,7 +132,7 @@ export const AuthProvider = ({ children }) => {
         payload.referralCode = referralCode.trim().toUpperCase()
       }
 
-      const res = await apiFetch('/api/auth/register', {
+      const res = await apiFetch('/auth/register', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
@@ -172,7 +172,7 @@ export const AuthProvider = ({ children }) => {
         payload.referralCode = referralCode.trim().toUpperCase()
       }
 
-      const res = await apiFetch('/api/auth/google', {
+      const res = await apiFetch('/auth/google', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
@@ -206,7 +206,7 @@ export const AuthProvider = ({ children }) => {
   // ✅ Verify Backup Code
   const verifyBackupCode = async (email, code) => {
     try {
-      const res = await apiFetch('/api/auth/verify-backup', {
+      const res = await apiFetch('/auth/verify-backup', {
         method: 'POST',
         body: JSON.stringify({ email, code }),
       })
@@ -232,7 +232,7 @@ export const AuthProvider = ({ children }) => {
   // ✅ Forgot Password
   const forgotPassword = async (email) => {
     try {
-      const res = await apiFetch('/api/auth/forgot-password', {
+      const res = await apiFetch('/auth/forgot-password', {
         method: 'POST',
         body: JSON.stringify({ email }),
       })
