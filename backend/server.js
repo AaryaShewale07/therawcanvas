@@ -50,7 +50,7 @@ app.use(
 // ============ CORS CONFIGURATION ============
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://therawcanvasstudio1.netlify.app',
+  'https://rawcanvasstudio1.netlify.app',
 ]
 
 app.use(
