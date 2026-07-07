@@ -26,10 +26,11 @@ const userSchema = new mongoose.Schema(
           if (this.authProvider === 'google') return true
           if (!this.isModified('password')) return true
           if (!v) return false
-          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v)
+          // ✅ Allows ANY special character (matches frontend behavior)
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(v)
         },
         message:
-          'Password must contain uppercase, lowercase, number, and special character (@$!%*?&)',
+          'Password must contain uppercase, lowercase, number, and special character',
       },
       select: false,
     },
