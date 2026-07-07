@@ -41,7 +41,7 @@ const SignupModal = () => {
     uppercase: /[A-Z]/.test(formData.password),
     lowercase: /[a-z]/.test(formData.password),
     number: /\d/.test(formData.password),
-    special: /[@$!%*?&]/.test(formData.password),
+    special: /[^A-Za-z0-9]/.test(formData.password),
   }
   const allPasswordChecksPassed = Object.values(passwordChecks).every(Boolean)
 
@@ -65,8 +65,8 @@ const SignupModal = () => {
         type === 'checkbox'
           ? checked
           : name === 'referralCode'
-          ? value.toUpperCase()
-          : value,
+            ? value.toUpperCase()
+            : value,
     }))
   }
 
@@ -249,8 +249,8 @@ const SignupModal = () => {
                       <span>
                         Must be at least <strong>8 characters</strong> with{' '}
                         <strong>uppercase</strong>, <strong>lowercase</strong>,{' '}
-                        <strong>number</strong>, and <strong>special character</strong>{' '}
-                        (@$!%*?&)
+                        <strong>number</strong>, and a <strong>special character</strong>{' '}
+                        (e.g. !@#$%^&*)
                       </span>
                     </p>
                   ) : (
@@ -260,39 +260,34 @@ const SignupModal = () => {
                       </p>
                       <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                         <p
-                          className={`text-xs flex items-center gap-1 ${
-                            passwordChecks.length ? 'text-green-600' : 'text-chocolate-500'
-                          }`}
+                          className={`text-xs flex items-center gap-1 ${passwordChecks.length ? 'text-green-600' : 'text-chocolate-500'
+                            }`}
                         >
                           {passwordChecks.length ? '✓' : '○'} At least 8 characters
                         </p>
                         <p
-                          className={`text-xs flex items-center gap-1 ${
-                            passwordChecks.uppercase ? 'text-green-600' : 'text-chocolate-500'
-                          }`}
+                          className={`text-xs flex items-center gap-1 ${passwordChecks.uppercase ? 'text-green-600' : 'text-chocolate-500'
+                            }`}
                         >
                           {passwordChecks.uppercase ? '✓' : '○'} Uppercase (A–Z)
                         </p>
                         <p
-                          className={`text-xs flex items-center gap-1 ${
-                            passwordChecks.lowercase ? 'text-green-600' : 'text-chocolate-500'
-                          }`}
+                          className={`text-xs flex items-center gap-1 ${passwordChecks.lowercase ? 'text-green-600' : 'text-chocolate-500'
+                            }`}
                         >
                           {passwordChecks.lowercase ? '✓' : '○'} Lowercase (a–z)
                         </p>
                         <p
-                          className={`text-xs flex items-center gap-1 ${
-                            passwordChecks.number ? 'text-green-600' : 'text-chocolate-500'
-                          }`}
+                          className={`text-xs flex items-center gap-1 ${passwordChecks.number ? 'text-green-600' : 'text-chocolate-500'
+                            }`}
                         >
                           {passwordChecks.number ? '✓' : '○'} Number (0–9)
                         </p>
                         <p
-                          className={`text-xs flex items-center gap-1 col-span-2 ${
-                            passwordChecks.special ? 'text-green-600' : 'text-chocolate-500'
-                          }`}
+                          className={`text-xs flex items-center gap-1 col-span-2 ${passwordChecks.special ? 'text-green-600' : 'text-chocolate-500'
+                            }`}
                         >
-                          {passwordChecks.special ? '✓' : '○'} Special char (@$!%*?&)
+                          {passwordChecks.special ? '✓' : '○'} Special character (e.g. !@#$%^&*)
                         </p>
                       </div>
                     </div>
@@ -318,11 +313,10 @@ const SignupModal = () => {
                   {/* ⭐ Password match indicator */}
                   {formData.confirmPassword && (
                     <p
-                      className={`text-xs mt-2 flex items-center gap-1 ${
-                        formData.password === formData.confirmPassword
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }`}
+                      className={`text-xs mt-2 flex items-center gap-1 ${formData.password === formData.confirmPassword
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                        }`}
                     >
                       {formData.password === formData.confirmPassword
                         ? '✓ Passwords match'
