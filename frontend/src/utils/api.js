@@ -6,6 +6,11 @@ const BASE_URL =
     ? import.meta.env.VITE_API_URL_LOCAL
     : import.meta.env.VITE_API_URL_PROD;
 
+console.log("MODE =", import.meta.env.MODE);
+console.log("LOCAL =", import.meta.env.VITE_API_URL_LOCAL);
+console.log("PROD =", import.meta.env.VITE_API_URL_PROD);
+console.log("BASE_URL =", BASE_URL);
+
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 30000, // 30 second default timeout
