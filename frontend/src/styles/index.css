@@ -294,7 +294,7 @@ iframe {
   a[role="button"]:not(.no-min-height),
   [type="button"]:not(.no-min-height),
   [type="submit"]:not(.no-min-height) {
-    min-height: 2px;
+    min-height: 44px;
   }
 }
 

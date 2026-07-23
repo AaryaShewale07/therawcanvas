@@ -35,17 +35,17 @@ const Checkout = () => {
 
   const checkoutItems = isBuyNow
     ? [
-        {
-          post: {
-            _id: buyNowProduct._id,
-            title: buyNowProduct.title,
-            price: buyNowProduct.price,
-            category: buyNowProduct.category,
-            images: buyNowProduct.image ? [{ url: buyNowProduct.image }] : [],
-          },
-          quantity: buyNowProduct.quantity,
+      {
+        post: {
+          _id: buyNowProduct._id,
+          title: buyNowProduct.title,
+          price: buyNowProduct.price,
+          category: buyNowProduct.category,
+          images: buyNowProduct.image ? [{ url: buyNowProduct.image }] : [],
         },
-      ]
+        quantity: buyNowProduct.quantity,
+      },
+    ]
     : cart.items || []
 
   const subtotal = isBuyNow ? buyNowProduct.price * buyNowProduct.quantity : cartTotal
@@ -357,7 +357,7 @@ const Checkout = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 mb-8 flex-wrap">
-          <h1 className="text-4xl font-heading font-bold text-chocolate-900">
+          <h1 className="text-3xl sm:text-4xl font-heading font-bold text-chocolate-900">
             Checkout
           </h1>
           {isBuyNow && (
@@ -401,7 +401,7 @@ const Checkout = () => {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* LEFT — Address + Payment + Rewards */}
           <div className="lg:col-span-2 space-y-6">
             {/* COLLAPSIBLE REWARD COUPONS */}
@@ -468,13 +468,12 @@ const Checkout = () => {
                                 key={coupon._id}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className={`relative rounded-2xl overflow-hidden border-2 transition-all ${
-                                  isApplied
-                                    ? 'border-green-500 bg-green-50'
-                                    : isApplicable
+                                className={`relative rounded-2xl overflow-hidden border-2 transition-all ${isApplied
+                                  ? 'border-green-500 bg-green-50'
+                                  : isApplicable
                                     ? 'border-primary-200 bg-gradient-to-br from-cream-50 to-white hover:border-primary-400 hover:shadow-md cursor-pointer'
                                     : 'border-cream-200 bg-cream-50 opacity-60'
-                                }`}
+                                  }`}
                                 onClick={() => {
                                   if (!isApplied && isApplicable) applyCoupon(coupon.code)
                                 }}
@@ -516,11 +515,10 @@ const Checkout = () => {
                                   <div className="pt-3 mt-3 border-t border-dashed border-cream-300 space-y-1">
                                     {coupon.minOrderAmount > 0 && (
                                       <p
-                                        className={`text-xs ${
-                                          isApplicable
-                                            ? 'text-chocolate-600'
-                                            : 'text-red-600 font-semibold'
-                                        }`}
+                                        className={`text-xs ${isApplicable
+                                          ? 'text-chocolate-600'
+                                          : 'text-red-600 font-semibold'
+                                          }`}
                                       >
                                         {isApplicable ? '✓' : '✗'} Min order ₹
                                         {coupon.minOrderAmount}
@@ -681,13 +679,12 @@ const Checkout = () => {
                         value={address.pincode}
                         onChange={handleChange}
                         maxLength={6}
-                        className={`w-full px-4 py-3 bg-cream-50 rounded-xl border-2 focus:outline-none transition ${
-                          address.pincode.length === 6 && shippingInfo.isValid
-                            ? 'border-green-500'
-                            : address.pincode.length === 6 && !shippingInfo.isValid
+                        className={`w-full px-4 py-3 bg-cream-50 rounded-xl border-2 focus:outline-none transition ${address.pincode.length === 6 && shippingInfo.isValid
+                          ? 'border-green-500'
+                          : address.pincode.length === 6 && !shippingInfo.isValid
                             ? 'border-red-500'
                             : 'border-transparent focus:border-chocolate-500'
-                        }`}
+                          }`}
                         placeholder="400001"
                       />
                       {address.pincode.length === 6 && !shippingInfo.isValid && (
@@ -709,20 +706,20 @@ const Checkout = () => {
               </h2>
 
               <div className="bg-gradient-to-br from-chocolate-700 to-chocolate-900 rounded-2xl p-5 text-white">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4 text-center sm:text-left">
+                  <div className="w-14 h-14 mx-auto sm:mx-0 bg-white/20 rounded-full flex items-center justify-center">
                     <HiOutlineCreditCard className="w-8 h-8" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-bold">Secure Online Payment</h3>
                     <p className="text-sm text-cream-200">Powered by Razorpay</p>
                   </div>
-                  <div className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  <div className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full mx-auto sm:mx-0 w-fit">
                     SECURE
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-3 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                   {[
                     { icon: '💳', label: 'Cards' },
                     { icon: '📱', label: 'UPI' },
@@ -731,15 +728,17 @@ const Checkout = () => {
                   ].map((m) => (
                     <div
                       key={m.label}
-                      className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm"
+                      className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm min-h-[90px] flex flex-col items-center justify-center"
                     >
-                      <div className="text-2xl mb-1">{m.icon}</div>
-                      <p className="text-xs font-semibold">{m.label}</p>
+                      <div className="text-2xl mb-2">{m.icon}</div>
+                      <p className="text-[11px] sm:text-xs font-semibold leading-tight">
+                        {m.label}
+                      </p>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-cream-200">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-cream-200">
                   <HiOutlineLockClosed className="w-4 h-4" />
                   <span>256-bit SSL encrypted • Your data is safe</span>
                 </div>
@@ -749,7 +748,7 @@ const Checkout = () => {
 
           {/* RIGHT — Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl shadow-elegant p-6 sticky top-24">
+            <div className="bg-white rounded-3xl shadow-elegant p-5 sm:p-6 lg:sticky lg:top-24">
               <h2 className="text-2xl font-bold text-chocolate-900 mb-4">
                 Order Summary
               </h2>
@@ -885,15 +884,14 @@ const Checkout = () => {
                       )}
                     </div>
                     <span
-                      className={`font-semibold ${
-                        shippingInfo.isFree ? 'text-green-600' : ''
-                      }`}
+                      className={`font-semibold ${shippingInfo.isFree ? 'text-green-600' : ''
+                        }`}
                     >
                       {!shippingInfo.isValid
                         ? 'Enter pincode'
                         : shippingInfo.isFree
-                        ? '✓ FREE'
-                        : `₹${shippingInfo.cost}`}
+                          ? '✓ FREE'
+                          : `₹${shippingInfo.cost}`}
                     </span>
                   </div>
                 )}

@@ -49,8 +49,8 @@ const Cart = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 pt-28">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold text-amber-900">Your Cart</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-amber-900">Your Cart</h1>
         <button
           onClick={clearCart}
           className="text-red-600 hover:text-red-800 text-sm font-semibold"
@@ -61,7 +61,7 @@ const Cart = () => {
 
       {/* ⭐ FREE SHIPPING PROGRESS BAR */}
       <div className={`mb-6 p-4 rounded-2xl ${isFreeShipping ? 'bg-green-50 border-2 border-green-500' : 'bg-amber-50 border-2 border-amber-300'}`}>
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
           <Truck className={`w-6 h-6 ${isFreeShipping ? 'text-green-600' : 'text-amber-700'}`} />
           <p className={`font-bold ${isFreeShipping ? 'text-green-800' : 'text-amber-900'}`}>
             {isFreeShipping ? (
@@ -88,15 +88,14 @@ const Cart = () => {
           {cart.items.map((item) => (
             <div
               key={item.post._id}
-              className="bg-white rounded-2xl shadow-md p-4 flex gap-4 items-center"
+              className="bg-white rounded-2xl shadow-md p-4 flex flex-col sm:flex-row gap-4 sm:items-center"
             >
               <img
                 src={item.post.images?.[0]?.url || '/placeholder.png'}
                 alt={item.post.title}
-                className="w-24 h-24 object-cover rounded-xl"
-              />
+                className="w-28 h-28 sm:w-24 sm:h-24 mx-auto sm:mx-0 object-cover rounded-xl" />
 
-              <div className="flex-1">
+              <div className="flex-1 text-center sm:text-left">
                 <h3 className="text-xl font-bold text-amber-900">{item.post.title}</h3>
                 {item.post.artist && (
                   <p className="text-sm text-amber-700">by {item.post.artist}</p>
@@ -107,13 +106,12 @@ const Cart = () => {
               </div>
 
               {/* Quantity Controls */}
-              <div className="flex items-center gap-3 bg-amber-50 rounded-full px-3 py-2">
-                <button
-                  onClick={() => updateQty(item.post._id, item.quantity - 1)}
-                  className="p-1 hover:bg-amber-200 rounded-full"
-                >
-                  <Minus size={16} />
-                </button>
+              <div className="flex justify-center sm:justify-start items-center gap-3 bg-amber-50 rounded-full px-3 py-2">                <button
+                onClick={() => updateQty(item.post._id, item.quantity - 1)}
+                className="p-1 hover:bg-amber-200 rounded-full"
+              >
+                <Minus size={16} />
+              </button>
                 <span className="font-bold min-w-[24px] text-center">{item.quantity}</span>
                 <button
                   onClick={() => updateQty(item.post._id, item.quantity + 1)}
@@ -123,8 +121,8 @@ const Cart = () => {
                 </button>
               </div>
 
-              <div className="text-right">
-                <p className="font-bold text-amber-900 text-lg">
+              <div className="text-center sm:text-right">
+                <p className="font-bold text-sm sm:text-base text-amber-900 text-lg">
                   ₹{item.post.price * item.quantity}
                 </p>
                 <button
@@ -170,7 +168,7 @@ const Cart = () => {
           </Link>
         </div>
       </div>
-    </div>
+    </div >
   )
 }
 
