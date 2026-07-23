@@ -4,7 +4,14 @@ const AuthContext = createContext()
 
 // ============ API HELPER ============
 // ⭐ FIXED: Include /api prefix to match backend routes
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_URL =
+  import.meta.env.MODE === "development"
+    ? import.meta.env.VITE_API_URL_LOCAL
+    : import.meta.env.VITE_API_URL_PROD;
+
+if (!API_URL) {
+  throw new Error("API URL is not configured.");
+}
 
 const apiFetch = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token')
