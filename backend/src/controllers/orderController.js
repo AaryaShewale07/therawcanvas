@@ -196,7 +196,7 @@ export const checkout = async (req, res) => {
     if (couponCode) {
       const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() })
       if (coupon) {
-        const check = coupon.isValidFor(req.user, subtotal)
+        const check = await coupon.isValidFor(req.user, subtotal)  // ✅ Added await
         if (check.valid) {
           couponDiscount = coupon.calculateDiscount(subtotal)
           couponData = {
@@ -299,7 +299,7 @@ export const checkout = async (req, res) => {
 
     // ⭐ Trigger referral reward if paid + user was referred
     if (order.paymentStatus === 'paid' && referralApplied) {
-      ;(async () => {
+      ; (async () => {
         try {
           console.log(`🎁 Triggering referral reward for new paid order ${order._id}`)
           const { rewardReferrer } = await import('./referralController.js')
@@ -389,21 +389,21 @@ export const cancelOrder = async (req, res) => {
 
     res.json({ success: true, order })
 
-    ;(async () => {
-      try {
-        const user = await User.findById(order.user)
-        if (user) {
-          await sendEmail({
-            to: user.email,
-            subject: `Order Cancelled #${order._id.toString().slice(-8).toUpperCase()}`,
-            html: orderCancelledEmail(order, user),
-          })
-          console.log('✅ Cancellation email sent')
+      ; (async () => {
+        try {
+          const user = await User.findById(order.user)
+          if (user) {
+            await sendEmail({
+              to: user.email,
+              subject: `Order Cancelled #${order._id.toString().slice(-8).toUpperCase()}`,
+              html: orderCancelledEmail(order, user),
+            })
+            console.log('✅ Cancellation email sent')
+          }
+        } catch (err) {
+          console.error('❌ Cancel email failed:', err.message)
         }
-      } catch (err) {
-        console.error('❌ Cancel email failed:', err.message)
-      }
-    })()
+      })()
   } catch (err) {
     if (!res.headersSent) {
       res.status(500).json({ success: false, message: err.message })
@@ -429,45 +429,45 @@ export const updateOrderStatus = async (req, res) => {
 
     res.json({ success: true, order })
 
-    ;(async () => {
-      try {
-        const user = await User.findById(order.user)
-        if (!user) return
+      ; (async () => {
+        try {
+          const user = await User.findById(order.user)
+          if (!user) return
 
-        let subject = ''
-        let html = ''
-        const orderId = order._id.toString().slice(-8).toUpperCase()
+          let subject = ''
+          let html = ''
+          const orderId = order._id.toString().slice(-8).toUpperCase()
 
-        if (status === 'shipped') {
-          subject = `🚚 Your Order #${orderId} has been Shipped!`
-          html = orderShippedEmail(order, user)
-        } else if (status === 'delivered') {
-          subject = `🎉 Order #${orderId} Delivered!`
-          html = orderDeliveredEmail(order, user)
-        } else if (status === 'cancelled') {
-          subject = `Order Cancelled #${orderId}`
-          html = orderCancelledEmail(order, user)
-        }
-
-        if (subject) {
-          await sendEmail({ to: user.email, subject, html })
-          console.log(`✅ ${status} email sent to ${user.email}`)
-        }
-
-        // Trigger referral reward when delivered
-        if (status === 'delivered' && previousStatus !== 'delivered') {
-          try {
-            console.log(`🎁 Triggering referral reward for order ${order._id}`)
-            const { rewardReferrer } = await import('./referralController.js')
-            await rewardReferrer(order._id)
-          } catch (err) {
-            console.error('❌ Referral reward failed:', err.message)
+          if (status === 'shipped') {
+            subject = `🚚 Your Order #${orderId} has been Shipped!`
+            html = orderShippedEmail(order, user)
+          } else if (status === 'delivered') {
+            subject = `🎉 Order #${orderId} Delivered!`
+            html = orderDeliveredEmail(order, user)
+          } else if (status === 'cancelled') {
+            subject = `Order Cancelled #${orderId}`
+            html = orderCancelledEmail(order, user)
           }
+
+          if (subject) {
+            await sendEmail({ to: user.email, subject, html })
+            console.log(`✅ ${status} email sent to ${user.email}`)
+          }
+
+          // Trigger referral reward when delivered
+          if (status === 'delivered' && previousStatus !== 'delivered') {
+            try {
+              console.log(`🎁 Triggering referral reward for order ${order._id}`)
+              const { rewardReferrer } = await import('./referralController.js')
+              await rewardReferrer(order._id)
+            } catch (err) {
+              console.error('❌ Referral reward failed:', err.message)
+            }
+          }
+        } catch (err) {
+          console.error('❌ Status email failed:', err.message)
         }
-      } catch (err) {
-        console.error('❌ Status email failed:', err.message)
-      }
-    })()
+      })()
   } catch (err) {
     if (!res.headersSent) {
       res.status(500).json({ success: false, message: err.message })

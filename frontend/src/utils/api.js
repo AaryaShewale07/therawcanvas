@@ -1,7 +1,10 @@
 import axios from 'axios'
 
 // ⭐ Use environment variable with fallback
-const BASE_URL = import.meta.env.VITE_API_URL
+const BASE_URL =
+  import.meta.env.MODE === "development"
+    ? import.meta.env.VITE_API_URL_LOCAL
+    : import.meta.env.VITE_API_URL_PROD;
 
 const api = axios.create({
   baseURL: BASE_URL,

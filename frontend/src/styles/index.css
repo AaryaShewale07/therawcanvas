@@ -253,13 +253,17 @@
    ═══════════════════════════════════════════════════ */
 
 /* Fix 1: Prevent any element from causing horizontal overflow */
-html, body, #root {
+html,
+body,
+#root {
   max-width: 100vw;
   overflow-x: hidden;
 }
 
 /* Fix 2: Make all images & videos responsive by default */
-img, video, iframe {
+img,
+video,
+iframe {
   max-width: 100%;
   height: auto;
 }
@@ -285,20 +289,38 @@ img, video, iframe {
 
 /* Fix 5: Better tap targets on Android */
 @media (max-width: 640px) {
-  button, a[role="button"], [type="button"], [type="submit"] {
-    min-height: 44px;
+
+  button:not(.no-min-height),
+  a[role="button"]:not(.no-min-height),
+  [type="button"]:not(.no-min-height),
+  [type="submit"]:not(.no-min-height) {
+    min-height: 2px;
   }
 }
 
 /* Fix 6: Prevent text overflow */
-h1, h2, h3, h4, h5, h6, p, span, div {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div {
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
 
 /* Fix 7: Force container padding on small screens */
 @media (max-width: 640px) {
-  .max-w-7xl, .max-w-6xl, .max-w-5xl, .max-w-4xl, .max-w-3xl, .max-w-2xl {
+
+  .max-w-7xl,
+  .max-w-6xl,
+  .max-w-5xl,
+  .max-w-4xl,
+  .max-w-3xl,
+  .max-w-2xl {
     padding-left: max(1rem, env(safe-area-inset-left));
     padding-right: max(1rem, env(safe-area-inset-right));
   }
@@ -306,7 +328,10 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 
 /* Fix 8: Prevent input zoom on Android */
 @media (max-width: 640px) {
-  input, textarea, select {
+
+  input,
+  textarea,
+  select {
     font-size: 16px !important;
   }
 }
@@ -318,19 +343,26 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 
 /* Fix 10: Fix backdrop-blur performance on Android */
 @supports not (backdrop-filter: blur(10px)) {
-  .backdrop-blur-md, .backdrop-blur-sm, .backdrop-blur-lg {
+
+  .backdrop-blur-md,
+  .backdrop-blur-sm,
+  .backdrop-blur-lg {
     background-color: rgba(255, 255, 255, 0.95) !important;
   }
 }
 
 /* Fix 11: Improve scroll performance on long pages */
-section, article, main {
+section,
+article,
+main {
   contain: layout style;
 }
 
 /* Fix 12: Fix toast notifications on mobile */
 @media (max-width: 640px) {
-  [data-sonner-toaster], .Toaster {
+
+  [data-sonner-toaster],
+  .Toaster {
     max-width: calc(100vw - 32px) !important;
     left: 16px !important;
     right: 16px !important;
@@ -348,18 +380,25 @@ button {
 
 /* Fix 14: Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
+
 /* Hide scrollbar but keep scroll functionality */
 .hide-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;             /* Chrome, Safari, Opera */
+  display: none;
+  /* Chrome, Safari, Opera */
 }

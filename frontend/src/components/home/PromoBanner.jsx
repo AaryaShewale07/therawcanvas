@@ -99,7 +99,7 @@ const PromoBanner = () => {
                 )}
 
                 {/* ⭐ Compact mobile layout with proper spacing */}
-                <div className="relative w-full px-3 sm:px-6 lg:px-10 pt-5 pb-7 sm:py-9">
+                <div className="relative w-full px-3 sm:px-6 lg:px-10 pt-5 pb-5 sm:py-9">
                     <div className="flex items-center justify-center gap-1.5 sm:gap-5 flex-nowrap sm:flex-wrap text-center">
                         {banners.length > 1 && (
                             <button
@@ -153,19 +153,26 @@ const PromoBanner = () => {
                         )}
                     </div>
 
-                    {/* Compact dots */}
+                    {/* ⭐ FIXED: Tiny dots with inline styles to guarantee sizing */}
                     {banners.length > 1 && (
-                        <div className="flex justify-center gap-1 mt-1.5 sm:mt-1">
+                        <div className="flex justify-center items-center gap-1.5 mt-3 sm:mt-4">
                             {banners.map((_, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setCurrentIdx(idx)}
-                                    className={`h-0.5 rounded-full transition-all
-                                        ${idx === currentIdx
-                                            ? 'w-5 bg-white'
-                                            : 'w-1.5 bg-white/40 hover:bg-white/60'
-                                        }
-                                    `}
+                                    style={{
+                                        height: '4px',
+                                        width: idx === currentIdx ? '18px' : '4px',
+                                        backgroundColor:
+                                            idx === currentIdx
+                                                ? 'rgba(255,255,255,1)'
+                                                : 'rgba(255,255,255,0.4)',
+                                        borderRadius: '9999px',
+                                        transition: 'all 0.3s ease',
+                                        padding: 0,
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                    }}
                                     aria-label={`Go to banner ${idx + 1}`}
                                 />
                             ))}

@@ -1,44 +1,38 @@
 import Gallery from '../models/Gallery.js'
-import path from 'path'
-import fs from 'fs'
-import { fileURLToPath } from 'url'
+import cloudinary from '../config/cloudinary.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+console.log('🔵🔵🔵 CLOUDINARY GALLERY CONTROLLER LOADED 🔵🔵🔵')
 
-// ─── Helper: build full URL for an image path ─────────────────────────────────
-const getFullImageUrl = (req, imagePath) => {
-  if (!imagePath) return ''
-  // If already a full URL (e.g. Cloudinary), return as is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath
-  }
-  // Otherwise prepend the server URL
-  return `${req.protocol}://${req.get('host')}${imagePath}`
-}
-
-// Transform a single event's images into full URLs
-const transformEvent = (req, event) => {
-  if (!event) return event
-  return {
-    ...event,
-    images: (event.images || []).map((img) => getFullImageUrl(req, img)),
-  }
-}
-
-const deleteFileFromDisk = (relativePath) => {
+// ─── Helper: Extract Cloudinary public_id from URL ───────────────────────────
+const getPublicIdFromUrl = (url) => {
+  if (!url || typeof url !== 'string') return null
   try {
-    // Strip any full URL prefix if it exists
-    let cleanPath = relativePath
-    if (cleanPath.includes('/uploads/')) {
-      cleanPath = '/uploads/' + cleanPath.split('/uploads/')[1]
-    }
-    const filePath = path.join(__dirname, '..', '..', 'public', cleanPath)
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath)
-    }
+    const parts = url.split('/upload/')
+    if (parts.length < 2) return null
+    const withoutVersion = parts[1].replace(/^v\d+\//, '')
+    const publicId = withoutVersion.replace(/\.[^/.]+$/, '')
+    return publicId
+  } catch {
+    return null
+  }
+}
+
+// ─── Helper: Detect if URL is a video ────────────────────────────────────────
+const isVideoUrl = (url) => {
+  if (!url || typeof url !== 'string') return false
+  return /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(url) || url.includes('/video/upload/')
+}
+
+// ─── Helper: Delete file from Cloudinary ─────────────────────────────────────
+const deleteFromCloudinary = async (url) => {
+  try {
+    const publicId = getPublicIdFromUrl(url)
+    if (!publicId) return
+    const resourceType = isVideoUrl(url) ? 'video' : 'image'
+    await cloudinary.uploader.destroy(publicId, { resource_type: resourceType })
+    console.log(`🗑️  Deleted from Cloudinary: ${publicId}`)
   } catch (err) {
-    console.error('Failed to delete file:', err.message)
+    console.error('Failed to delete from Cloudinary:', err.message)
   }
 }
 
@@ -55,13 +49,10 @@ export const getAllEvents = async (req, res) => {
       .sort({ date: -1, createdAt: -1 })
       .lean()
 
-    // ⭐ Transform images to full URLs
-    const transformed = events.map((e) => transformEvent(req, e))
-
     res.status(200).json({
       success: true,
-      count: transformed.length,
-      data: transformed,
+      count: events.length,
+      data: events,
     })
   } catch (err) {
     console.error('Get gallery events error:', err)
@@ -79,7 +70,7 @@ export const getEvent = async (req, res) => {
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' })
     }
-    res.status(200).json({ success: true, data: transformEvent(req, event) })
+    res.status(200).json({ success: true, data: event })
   } catch (err) {
     console.error('Get event error:', err)
     res.status(500).json({ success: false, message: 'Failed to fetch event' })
@@ -88,7 +79,13 @@ export const getEvent = async (req, res) => {
 
 // ─── POST /api/gallery ────────────────────────────────────────────────────────
 export const createEvent = async (req, res) => {
+  console.log('🔥 createEvent CALLED');
+
   try {
+    console.log("========== FILES ==========");
+    console.dir(req.files, { depth: null });
+    console.log("===========================");
+
     const { title, description, category, date, tags } = req.body
 
     if (!title || !category) {
@@ -98,12 +95,23 @@ export const createEvent = async (req, res) => {
       })
     }
 
-    const images = []
+    // ⭐ Cloudinary URLs come from req.files[].path
+    console.log("============== FILES ==============");
+    console.dir(req.files, { depth: null });
+    console.log("===================================");
+
+    const images = [];
+
     if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        // Store relative path in DB — transform to full URL on read
-        images.push(`/uploads/gallery/${file.filename}`)
-      })
+      req.files.forEach((file, index) => {
+        console.log(`File ${index}:`);
+        console.log("path:", file.path);
+        console.log("filename:", file.filename);
+        console.log("secure_url:", file.secure_url);
+        console.log("--------------------------------");
+
+        images.push(file.path);
+      });
     }
 
     if (images.length === 0) {
@@ -131,14 +139,17 @@ export const createEvent = async (req, res) => {
       createdBy: req.user?._id,
     })
 
-    // ⭐ Return with full URLs
     res.status(201).json({
       success: true,
-      data: transformEvent(req, event.toObject()),
+      data: event,
     })
   } catch (err) {
     console.error('Create gallery event error:', err)
-    res.status(500).json({ success: false, message: 'Failed to create gallery event' })
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create gallery event',
+      error: err.message,
+    })
   }
 }
 
@@ -152,23 +163,16 @@ export const updateEvent = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Event not found' })
     }
 
-    // Existing images user kept — strip the full URL prefix back to relative
     let keptImages = []
     if (existingImages) {
       const arr = Array.isArray(existingImages) ? existingImages : [existingImages]
-      keptImages = arr.map((url) => {
-        if (url.includes('/uploads/')) {
-          return '/uploads/' + url.split('/uploads/')[1]
-        }
-        return url
-      })
+      keptImages = arr.filter(Boolean)
     }
 
-    // New uploads
     const newImages = []
     if (req.files && req.files.length > 0) {
       req.files.forEach((file) => {
-        newImages.push(`/uploads/gallery/${file.filename}`)
+        newImages.push(file.path)
       })
     }
 
@@ -181,9 +185,9 @@ export const updateEvent = async (req, res) => {
       })
     }
 
-    // Delete removed images from disk
+    // Delete removed images from Cloudinary
     const removedImages = event.images.filter((img) => !keptImages.includes(img))
-    removedImages.forEach(deleteFileFromDisk)
+    await Promise.all(removedImages.map(deleteFromCloudinary))
 
     let parsedTags = []
     if (tags) {
@@ -204,7 +208,7 @@ export const updateEvent = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: transformEvent(req, event.toObject()),
+      data: event,
     })
   } catch (err) {
     console.error('Update gallery event error:', err)
@@ -220,7 +224,7 @@ export const deleteEvent = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Event not found' })
     }
 
-    event.images.forEach(deleteFileFromDisk)
+    await Promise.all(event.images.map(deleteFromCloudinary))
 
     await Gallery.findByIdAndDelete(req.params.id)
 

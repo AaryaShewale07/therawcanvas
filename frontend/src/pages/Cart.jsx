@@ -36,7 +36,7 @@ const Cart = () => {
         <ShoppingBag size={80} className="mx-auto text-amber-300 mb-4" />
         <h2 className="text-3xl font-bold text-amber-900 mb-3">Your cart is empty</h2>
         <p className="text-gray-600 mb-6">Add some beautiful artworks to get started!</p>
-        <Link to="/art" className="bg-amber-700 text-white px-8 py-3 rounded-full inline-block hover:bg-amber-800">
+        <Link to="/" className="bg-amber-700 text-white px-8 py-3 rounded-full inline-block hover:bg-amber-800">
           Browse Art
         </Link>
       </div>
@@ -163,7 +163,7 @@ const Cart = () => {
             Proceed to Checkout
           </button>
           <Link
-            to="/art"
+            to="/"
             className="block text-center mt-3 text-amber-700 hover:text-amber-900"
           >
             Continue Shopping

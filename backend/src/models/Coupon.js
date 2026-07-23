@@ -31,9 +31,10 @@ const couponSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // ⭐ Removed 'admin' — only 'all' (public) or 'user' (loyalty 5+ orders)
     applicableRoles: {
       type: [String],
-      enum: ['user', 'admin', 'all'],
+      enum: ['user', 'all'],
       default: ['all'],
     },
     usageLimit: {
@@ -80,11 +81,13 @@ const couponSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-couponSchema.methods.isValidFor = function (user, orderAmount) {
+// ⭐ Now ASYNC — checks user's delivered order count for loyalty coupons
+couponSchema.methods.isValidFor = async function (user, orderAmount) {
   const now = new Date()
 
   if (!this.isActive) return { valid: false, reason: 'Coupon is inactive' }
-  if (now < this.validFrom) return { valid: false, reason: 'Coupon not yet active' }
+  if (now < this.validFrom)
+    return { valid: false, reason: 'Coupon not yet active' }
   if (now > this.validUntil) return { valid: false, reason: 'Coupon expired' }
 
   if (this.usageLimit && this.usedCount >= this.usageLimit)
@@ -96,14 +99,30 @@ couponSchema.methods.isValidFor = function (user, orderAmount) {
       reason: `Minimum order amount is ₹${this.minOrderAmount}`,
     }
 
-  if (!this.applicableRoles.includes('all') && !this.applicableRoles.includes(user.role))
-    return { valid: false, reason: 'Not applicable to your account type' }
+  // ⭐ LOYALTY CHECK — 'user' role coupons require 5+ delivered orders
+  if (
+    this.applicableRoles.includes('user') &&
+    !this.applicableRoles.includes('all')
+  ) {
+    const Order = mongoose.model('Order')
+    const orderCount = await Order.countDocuments({
+      user: user._id,
+      orderStatus: 'delivered', // ⭐ Matches your Order model enum
+    })
+
+    if (orderCount < 5) {
+      return {
+        valid: false,
+        reason: `This is a loyalty coupon — requires 5+ delivered orders. You currently have ${orderCount}.`,
+      }
+    }
+  }
 
   if (this.assignedTo && this.assignedTo.toString() !== user._id.toString())
     return { valid: false, reason: 'This coupon is not assigned to you' }
 
   const userUsageCount = this.usedBy.filter(
-    (u) => u.user.toString() === user._id.toString()
+    (u) => u.user && u.user.toString() === user._id.toString()
   ).length
   if (userUsageCount >= this.perUserLimit)
     return { valid: false, reason: 'You have already used this coupon' }

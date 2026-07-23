@@ -16,14 +16,71 @@ const CATEGORIES = ['All', 'Workshop', 'Testimonials']
 
 // ─── Helper: Detect if a URL is a video ──────────────────────────────────────
 const isVideo = (url) => {
-  if (!url) return false
+  if (!url || typeof url !== 'string') return false
   return /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(url) || url.includes('/video/')
 }
 
-// ─── Lightbox (browses all media in a single event) ─────────────────────────
+// ─── ⭐ Helper: Extract URL from string or object ─────────────────────────────
+const getMediaUrl = (item) => {
+  if (!item) return ''
+  if (typeof item === 'string') return item
+  return item.url || item.secure_url || item.src || ''
+}
+
+// ─── ⭐ Media Tile — SIMPLE & RELIABLE ───────────────────────────────────────
+const MediaTile = ({ src, withPlayIcon = false }) => {
+  const url = getMediaUrl(src)
+  const itemIsVideo = isVideo(url)
+  const [error, setError] = useState(false)
+
+  if (!url || error) {
+    return (
+      <div className="relative w-full h-full bg-gradient-to-br from-cream-100 to-cream-200 flex items-center justify-center">
+        <HiOutlinePhotograph className="w-10 h-10 text-chocolate-300" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative w-full h-full bg-cream-100">
+      {itemIsVideo ? (
+        <video
+          src={url}
+          muted
+          autoPlay
+          loop
+          playsInline
+          preload="metadata"
+          onError={() => setError(true)}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+      ) : (
+        <img
+          src={url}
+          alt=""
+          loading="lazy"
+          onError={() => setError(true)}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+      )}
+
+      {withPlayIcon && itemIsVideo && (
+        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-black/60 backdrop-blur-sm rounded-full p-1 sm:p-1.5">
+          <HiOutlinePlay className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Lightbox ─────────────────────────────────────────────────────────────────
 const Lightbox = ({ event, startIndex, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(startIndex)
-  const media = event.images || []
+
+  // ⭐ Normalize all media to string URLs
+  const media = (event.images || [])
+    .map(getMediaUrl)
+    .filter(Boolean)
 
   const prevMedia = () =>
     setCurrentIndex((i) => (i - 1 + media.length) % media.length)
@@ -105,20 +162,20 @@ const Lightbox = ({ event, startIndex, onClose }) => {
                 <>
                   <button
                     onClick={prevMedia}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-2 transition"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-2 transition z-10"
                   >
                     <HiOutlineChevronLeft className="w-6 h-6" />
                   </button>
                   <button
                     onClick={nextMedia}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-2 transition"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-2 transition z-10"
                   >
                     <HiOutlineChevronRight className="w-6 h-6" />
                   </button>
                 </>
               )}
 
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full z-10">
                 {currentIndex + 1} / {media.length}
                 {currentIsVideo && ' 🎬'}
               </div>
@@ -189,6 +246,7 @@ const Lightbox = ({ event, startIndex, onClose }) => {
                             <img
                               src={item}
                               alt=""
+                              loading="lazy"
                               className="w-full h-full object-cover"
                             />
                           )}
@@ -206,41 +264,11 @@ const Lightbox = ({ event, startIndex, onClose }) => {
   )
 }
 
-// ─── Event Card (COMPACT for mobile) ──────────────────────────────────────────
+// ─── Event Card ───────────────────────────────────────────────────────────────
 const EventCard = ({ event, onOpen }) => {
   const media = event.images || []
   const mediaCount = media.length
-  const videoCount = media.filter(isVideo).length
-
-  const MediaTile = ({ src, withPlayIcon = false }) => {
-    const itemIsVideo = isVideo(src)
-    return (
-      <div className="relative w-full h-full">
-        {itemIsVideo ? (
-          <video
-            src={src}
-            muted
-            autoPlay
-            loop
-            playsInline
-            preload="metadata"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <img
-            src={src}
-            alt=""
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        )}
-        {withPlayIcon && itemIsVideo && (
-          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-black/60 backdrop-blur-sm rounded-full p-1 sm:p-1.5">
-            <HiOutlinePlay className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
-          </div>
-        )}
-      </div>
-    )
-  }
+  const videoCount = media.filter((m) => isVideo(getMediaUrl(m))).length
 
   const renderMediaGrid = () => {
     if (mediaCount === 0) {
@@ -320,7 +348,6 @@ const EventCard = ({ event, onOpen }) => {
       <div className="relative">
         {renderMediaGrid()}
 
-        {/* Category badge - smaller on mobile */}
         <div className="absolute top-1.5 left-1.5 sm:top-3 sm:left-3">
           <span
             className={`backdrop-blur-sm text-[9px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full font-medium
@@ -335,7 +362,6 @@ const EventCard = ({ event, onOpen }) => {
           </span>
         </div>
 
-        {/* Media count badge - smaller on mobile */}
         {mediaCount > 1 && (
           <div className="absolute top-1.5 right-1.5 sm:top-3 sm:right-3 bg-black/60 backdrop-blur-sm text-white text-[9px] sm:text-xs font-medium px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full flex items-center gap-1">
             {videoCount > 0 ? `🎬${videoCount} 📷${mediaCount - videoCount}` : `📷${mediaCount}`}
@@ -349,7 +375,6 @@ const EventCard = ({ event, onOpen }) => {
         </div>
       </div>
 
-      {/* Info - compact on mobile */}
       <div className="p-2 sm:p-4">
         <h3 className="font-heading font-bold text-chocolate-900 text-xs sm:text-base leading-snug line-clamp-1 mb-0.5 sm:mb-1">
           {event.title}
@@ -392,8 +417,14 @@ const Gallery = () => {
     const fetchGallery = async () => {
       try {
         const res = await api.get('/gallery')
+        console.log('🔍 RAW API DATA:', res.data.data)
+
         const fetched = (res.data.data || []).map((event) => ({
           ...event,
+          // ⭐ NORMALIZE: extract URL string from object OR keep string as-is
+          images: (event.images || [])
+            .map(getMediaUrl)
+            .filter(Boolean),
           date: event.date
             ? new Date(event.date).toLocaleDateString('en-IN', {
               day: 'numeric',
@@ -402,6 +433,12 @@ const Gallery = () => {
             })
             : '',
         }))
+
+        console.log('📦 PROCESSED EVENTS:', fetched)
+        fetched.forEach((ev, idx) => {
+          console.log(`   Event ${idx}: "${ev.title}" has ${ev.images?.length || 0} images:`, ev.images)
+        })
+
         setEvents(fetched)
       } catch (err) {
         console.error('Failed to load gallery:', err)
@@ -665,20 +702,20 @@ const Gallery = () => {
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/the_.rawcanvas._/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-pink-500/30 transition"
               >
-                📷 Instagram
+                Instagram
               </a>
               <a
-                href="https://facebook.com"
+                href="https://www.facebook.com/TheRawCanvas21"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-blue-600/30 transition"
               >
-                👍 Facebook
+                Facebook
               </a>
             </div>
           </motion.div>

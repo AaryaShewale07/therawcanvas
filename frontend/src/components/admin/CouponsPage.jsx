@@ -29,7 +29,6 @@ const CouponModal = ({ coupon, onClose, onSave }) => {
   })
   const [saving, setSaving] = useState(false)
 
-  // ⭐ Lock body scroll when modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => {
@@ -37,7 +36,6 @@ const CouponModal = ({ coupon, onClose, onSave }) => {
     }
   }, [])
 
-  // ⭐ Close on Escape key
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') onClose()
@@ -51,19 +49,9 @@ const CouponModal = ({ coupon, onClose, onSave }) => {
     setForm((f) => ({ ...f, [name]: type === 'checkbox' ? checked : value }))
   }
 
-  const handleRoleToggle = (role) => {
-    setForm((f) => {
-      let roles = [...f.applicableRoles]
-      if (role === 'all') {
-        roles = ['all']
-      } else {
-        roles = roles.filter((r) => r !== 'all')
-        if (roles.includes(role)) roles = roles.filter((r) => r !== role)
-        else roles.push(role)
-        if (roles.length === 0) roles = ['all']
-      }
-      return { ...f, applicableRoles: roles }
-    })
+  // ⭐ Simplified — only "all" or "user" (loyalty)
+  const handleRoleChange = (role) => {
+    setForm((f) => ({ ...f, applicableRoles: [role] }))
   }
 
   const handleSubmit = async (e) => {
@@ -96,7 +84,6 @@ const CouponModal = ({ coupon, onClose, onSave }) => {
     }
   }
 
-  // ⭐ USE PORTAL — renders to document.body to escape admin layout
   return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
@@ -120,9 +107,7 @@ const CouponModal = ({ coupon, onClose, onSave }) => {
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col"
-        style={{
-          maxHeight: '90vh',
-        }}
+        style={{ maxHeight: '90vh' }}
       >
         {/* HEADER */}
         <div className="flex-shrink-0 bg-white border-b border-cream-100 px-6 py-4 flex justify-between items-center rounded-t-2xl">
@@ -280,30 +265,66 @@ const CouponModal = ({ coupon, onClose, onSave }) => {
             </div>
           </div>
 
+          {/* ⭐ SIMPLIFIED ROLE SELECTOR — only "All" or "Loyalty" */}
           <div>
             <label className="block text-sm font-semibold mb-2 text-chocolate-700">
-              Applicable To (Roles)
+              Coupon Type
             </label>
-            <div className="flex gap-2 flex-wrap">
-              {['all', 'user', 'admin'].map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => handleRoleToggle(role)}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold border-2 transition ${
-                    form.applicableRoles.includes(role)
-                      ? 'bg-chocolate-800 text-white border-chocolate-800'
-                      : 'bg-white text-chocolate-600 border-cream-300 hover:border-chocolate-400'
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleRoleChange('all')}
+                className={`p-4 rounded-xl border-2 transition text-left ${
+                  form.applicableRoles.includes('all')
+                    ? 'bg-chocolate-800 text-white border-chocolate-800'
+                    : 'bg-white text-chocolate-600 border-cream-300 hover:border-chocolate-400'
+                }`}
+              >
+                <div className="text-2xl mb-1">🌐</div>
+                <div className="font-bold text-sm">Public</div>
+                <div
+                  className={`text-xs mt-1 ${
+                    form.applicableRoles.includes('all')
+                      ? 'text-white/80'
+                      : 'text-chocolate-500'
                   }`}
                 >
-                  {role === 'all'
-                    ? '🌐 All Users'
-                    : role === 'user'
-                    ? '👤 Users Only'
-                    : '👑 Admins Only'}
-                </button>
-              ))}
+                  Available to all users
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleRoleChange('user')}
+                className={`p-4 rounded-xl border-2 transition text-left ${
+                  form.applicableRoles.includes('user')
+                    ? 'bg-primary-600 text-white border-primary-600'
+                    : 'bg-white text-chocolate-600 border-cream-300 hover:border-primary-400'
+                }`}
+              >
+                <div className="text-2xl mb-1">👑</div>
+                <div className="font-bold text-sm">Loyalty</div>
+                <div
+                  className={`text-xs mt-1 ${
+                    form.applicableRoles.includes('user')
+                      ? 'text-white/80'
+                      : 'text-chocolate-500'
+                  }`}
+                >
+                  Only for customers with 5+ orders
+                </div>
+              </button>
             </div>
+
+            {/* Helper text */}
+            <p className="text-xs text-chocolate-500 mt-3 flex items-start gap-1.5">
+              <span>💡</span>
+              <span>
+                {form.applicableRoles.includes('all')
+                  ? 'This coupon will be visible and usable by everyone.'
+                  : 'This is a loyalty reward — only customers who have completed 5 or more orders can see and use this coupon.'}
+              </span>
+            </p>
           </div>
 
           <label className="flex items-center gap-3 cursor-pointer p-3 bg-cream-50 rounded-xl hover:bg-cream-100 transition">
@@ -355,7 +376,7 @@ const CouponModal = ({ coupon, onClose, onSave }) => {
         </div>
       </motion.div>
     </motion.div>,
-    document.body // ⭐ Portal target
+    document.body
   )
 }
 
@@ -398,6 +419,13 @@ const CouponsPage = () => {
     } catch (err) {
       toast.error('Failed to delete')
     }
+  }
+
+  // Helper to display coupon type
+  const getCouponTypeLabel = (roles) => {
+    if (roles.includes('all')) return { label: '🌐 Public', color: 'bg-blue-100 text-blue-700' }
+    if (roles.includes('user')) return { label: '👑 Loyalty (5+ orders)', color: 'bg-purple-100 text-purple-700' }
+    return { label: roles.join(', '), color: 'bg-gray-100 text-gray-700' }
   }
 
   return (
@@ -447,79 +475,90 @@ const CouponsPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {coupons.map((c) => (
-            <motion.div
-              key={c._id}
-              layout
-              className="bg-white rounded-2xl shadow-elegant border-2 border-dashed border-chocolate-200 overflow-hidden"
-            >
-              <div className="bg-gradient-to-br from-chocolate-700 to-chocolate-900 p-5 text-white">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs uppercase font-bold opacity-70">
-                    Code
-                  </span>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-bold ${
-                      c.isActive ? 'bg-green-500' : 'bg-red-500'
-                    }`}
-                  >
-                    {c.isActive ? '✓ Active' : '✗ Inactive'}
-                  </span>
-                </div>
-                <p className="text-2xl font-black tracking-wider">{c.code}</p>
-                <p className="text-sm mt-1 opacity-80">
-                  {c.discountType === 'percentage'
-                    ? `${c.discountValue}% OFF`
-                    : `₹${c.discountValue} OFF`}
-                  {c.maxDiscount && ` (max ₹${c.maxDiscount})`}
-                </p>
-              </div>
-
-              <div className="p-4 space-y-2 text-sm">
-                {c.description && (
-                  <p className="text-chocolate-600 line-clamp-2">
-                    {c.description}
+          {coupons.map((c) => {
+            const typeInfo = getCouponTypeLabel(c.applicableRoles || [])
+            return (
+              <motion.div
+                key={c._id}
+                layout
+                className="bg-white rounded-2xl shadow-elegant border-2 border-dashed border-chocolate-200 overflow-hidden"
+              >
+                <div className="bg-gradient-to-br from-chocolate-700 to-chocolate-900 p-5 text-white">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-xs uppercase font-bold opacity-70">
+                      Code
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-bold ${
+                        c.isActive ? 'bg-green-500' : 'bg-red-500'
+                      }`}
+                    >
+                      {c.isActive ? '✓ Active' : '✗ Inactive'}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-black tracking-wider">{c.code}</p>
+                  <p className="text-sm mt-1 opacity-80">
+                    {c.discountType === 'percentage'
+                      ? `${c.discountValue}% OFF`
+                      : `₹${c.discountValue} OFF`}
+                    {c.maxDiscount && ` (max ₹${c.maxDiscount})`}
                   </p>
-                )}
-                <div className="flex justify-between text-chocolate-500 text-xs">
-                  <span>Min order: ₹{c.minOrderAmount || 0}</span>
-                  <span>
-                    Used: {c.usedCount}
-                    {c.usageLimit ? `/${c.usageLimit}` : ''}
-                  </span>
                 </div>
-                <div className="flex justify-between text-chocolate-500 text-xs">
-                  <span>Roles: {c.applicableRoles.join(', ')}</span>
-                  <span>
-                    Exp: {new Date(c.validUntil).toLocaleDateString('en-IN')}
-                  </span>
-                </div>
-                {c.isReferralReward && (
-                  <span className="inline-block text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">
-                    🎁 Referral Reward
-                  </span>
-                )}
 
-                <div className="flex gap-2 pt-3 border-t border-cream-100">
-                  <button
-                    onClick={() => {
-                      setEditing(c)
-                      setModalOpen(true)
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-chocolate-600 hover:bg-cream-50 rounded-lg"
-                  >
-                    <HiOutlinePencil className="w-3.5 h-3.5" /> Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(c._id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 rounded-lg"
-                  >
-                    <HiOutlineTrash className="w-3.5 h-3.5" /> Delete
-                  </button>
+                <div className="p-4 space-y-2 text-sm">
+                  {c.description && (
+                    <p className="text-chocolate-600 line-clamp-2">
+                      {c.description}
+                    </p>
+                  )}
+
+                  {/* ⭐ Coupon type badge */}
+                  <div>
+                    <span className={`inline-block text-xs px-2 py-1 rounded-full font-semibold ${typeInfo.color}`}>
+                      {typeInfo.label}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-chocolate-500 text-xs">
+                    <span>Min order: ₹{c.minOrderAmount || 0}</span>
+                    <span>
+                      Used: {c.usedCount}
+                      {c.usageLimit ? `/${c.usageLimit}` : ''}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-chocolate-500 text-xs">
+                    <span>Per user: {c.perUserLimit}</span>
+                    <span>
+                      Exp: {new Date(c.validUntil).toLocaleDateString('en-IN')}
+                    </span>
+                  </div>
+                  {c.isReferralReward && (
+                    <span className="inline-block text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">
+                      🎁 Referral Reward
+                    </span>
+                  )}
+
+                  <div className="flex gap-2 pt-3 border-t border-cream-100">
+                    <button
+                      onClick={() => {
+                        setEditing(c)
+                        setModalOpen(true)
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-chocolate-600 hover:bg-cream-50 rounded-lg"
+                    >
+                      <HiOutlinePencil className="w-3.5 h-3.5" /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(c._id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 rounded-lg"
+                    >
+                      <HiOutlineTrash className="w-3.5 h-3.5" /> Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            )
+          })}
         </div>
       )}
 

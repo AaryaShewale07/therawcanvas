@@ -41,11 +41,21 @@ const isVideo = (url) => {
   return /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(url) || url.includes('/video/')
 }
 
-// ─── Media Tile: renders image OR autoplay muted video ───────────────────────
+// ─── Media Tile: renders image OR autoplay muted video (WITH LOADING & ERROR HANDLING) ───
 const MediaTile = ({ src, withPlayIcon = false }) => {
   const itemIsVideo = isVideo(src)
+  const [error, setError] = useState(false)
+
+  if (!src || error) {
+    return (
+      <div className="relative w-full h-full bg-gradient-to-br from-cream-100 to-cream-200 flex items-center justify-center">
+        <HiOutlinePhotograph className="w-10 h-10 text-chocolate-300" />
+      </div>
+    )
+  }
+
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full bg-cream-100">
       {itemIsVideo ? (
         <video
           src={src}
@@ -54,15 +64,19 @@ const MediaTile = ({ src, withPlayIcon = false }) => {
           loop
           playsInline
           preload="metadata"
+          onError={() => setError(true)}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       ) : (
         <img
           src={src}
           alt=""
+          loading="lazy"
+          onError={() => setError(true)}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       )}
+
       {withPlayIcon && itemIsVideo && (
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full p-1.5">
           <HiOutlinePlay className="w-3 h-3 text-white" />
@@ -71,7 +85,6 @@ const MediaTile = ({ src, withPlayIcon = false }) => {
     </div>
   )
 }
-
 // ─── Gallery Event Card (mirrors Gallery.jsx EventCard) ─────────────────────
 const GalleryEventCard = ({ event }) => {
   const media = event.images || []
@@ -154,10 +167,9 @@ const GalleryEventCard = ({ event }) => {
         <div className="absolute top-3 left-3">
           <span
             className={`backdrop-blur-sm text-xs px-2 py-1 rounded-full font-medium
-              ${
-                event.category === 'Workshop'
-                  ? 'bg-purple-900/70 text-purple-200'
-                  : 'bg-chocolate-900/70 text-gold-300'
+              ${event.category === 'Workshop'
+                ? 'bg-purple-900/70 text-purple-200'
+                : 'bg-chocolate-900/70 text-gold-300'
               }`}
           >
             {event.category === 'Workshop' ? '🎨' : '⭐'} {event.category}
@@ -186,10 +198,10 @@ const GalleryEventCard = ({ event }) => {
         <p className="text-primary-600 text-sm font-medium mb-3">
           {event.date
             ? new Date(event.date).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })
             : event.category}
         </p>
         <div className="flex items-center justify-between pt-3 border-t border-cream-100">
