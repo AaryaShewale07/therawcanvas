@@ -35,7 +35,7 @@ document.addEventListener(
 
 // ⭐ Enable security protection (if applicable)
 if (typeof enableSecurityProtection === 'function') {
-  enableSecurityProtection()
+  //enableSecurityProtection()
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

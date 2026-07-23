@@ -1,7 +1,6 @@
 // ⚠️ Only enable in production
 export const enableSecurityProtection = () => {
-  if (import.meta.env.MODE !== 'production') return
-
+  if (import.meta.env.VITE_DISABLE_INSPECT !== 'true') return
   // 1. Disable right-click
   document.addEventListener('contextmenu', (e) => {
     e.preventDefault()
